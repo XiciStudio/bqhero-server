@@ -180,3 +180,11 @@ def update_user_money(username: str, money: int, total_recharge: int):
         "UPDATE user SET Money = ?, TotalRecharge = ? WHERE username = ?",
         (money, total_recharge, username),
     )
+
+
+def get_recent_users(limit: int = 5) -> list:
+    """Get most recently registered users (highest UID first)."""
+    return query_all(
+        "SELECT username, uid, Money, TotalRecharge FROM user ORDER BY uid DESC LIMIT ?",
+        (limit,),
+    )

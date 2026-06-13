@@ -10,13 +10,14 @@ import time
 import urllib.request
 
 from flask import (Blueprint, request, render_template, send_from_directory,
-                   make_response, redirect, Response)
+                   make_response, redirect, Response, flash)
 
 logger = logging.getLogger("bqtj")
 
-from app.models.user import get_save_metadata, get_game_data, get_money, get_total_recharge
+from app.models.user import get_save_metadata, get_game_data, get_money, get_total_recharge, add_money
 from app.utils.helpers import get_user_from_cookies
-from app.utils.crypto import encrypt_money
+from app.utils.crypto import encrypt_money, decrypt_exchange_code
+from app.models.exchange_code import is_code_used, mark_code_used
 import config
 
 misc_bp = Blueprint("misc", __name__)
@@ -41,6 +42,45 @@ def play():
     if username:
         return render_template("bqv3241.html")
     return render_template("index.html")
+
+
+@misc_bp.route("/redeem", methods=["POST", "GET"])
+def redeem_page():
+    """User-facing exchange code redemption page."""
+    user = get_user_from_cookies()
+    if not user:
+        return redirect("/")
+
+    if request.method == "POST":
+        code_str = request.form.get("code", "").strip()
+        if not code_str:
+            flash("请输入兑换码", "error")
+            return redirect("/")
+
+        try:
+            decrypted = decrypt_exchange_code(code_str)
+            parts = decrypted.split("&")
+            code_id = parts[0]
+            num = int(parts[1])
+            code_type = parts[2]
+        except Exception:
+            flash("无效的兑换码", "error")
+            return redirect("/")
+
+        if is_code_used(code_id):
+            flash("该兑换码已被使用", "error")
+            return redirect("/")
+
+        if code_type == "Money":
+            mark_code_used(code_id)
+            new_balance = add_money(user["username"], num)
+            flash(f"兑换成功！获得 {num} 金币，当前余额 {new_balance}", "success")
+        else:
+            flash("未知的兑换码类型", "error")
+
+        return redirect("/")
+
+    return redirect("/")
 
 
 # ═══════════════════════════════════════════════════════════════

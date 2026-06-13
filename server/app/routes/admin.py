@@ -6,7 +6,7 @@ from flask import Blueprint, session, redirect, url_for, render_template, reques
 from config import ADMIN_KEY
 from app.models.user import (
     get_user_count, get_all_users, search_users,
-    delete_user, update_user_money,
+    delete_user, update_user_money, get_recent_users,
 )
 from app.models.exchange_code import get_code_count, get_all_codes, create_code
 from app.models.rank import get_rank_count
@@ -53,7 +53,14 @@ def dashboard():
         "unions": len(get_all_unions()),
         "ranks": get_rank_count(),
     }
-    return render_template("admin/dashboard.html", stats=stats)
+    recent_users = get_recent_users(5)
+    recent_codes, _ = get_all_codes(page=1, per_page=5)
+    return render_template(
+        "admin/dashboard.html",
+        stats=stats,
+        recent_users=recent_users,
+        recent_codes=recent_codes,
+    )
 
 
 # ---- User Management ----
@@ -129,7 +136,7 @@ def code_create():
     code_type = request.form.get("type", "Money")
     num = int(request.form.get("num", 0))
     encrypted = create_code(code_type, num)
-    flash(f"已创建兑换码：{encrypted}", "success")
+    flash(encrypted, "code_created")
     return redirect(url_for("admin.codes"))
 
 
