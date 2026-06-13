@@ -23,11 +23,14 @@ cdn_log.txt
 .idea/
 
 # CDN-downloaded game resources (auto-populated)
-game_files/swf/
-game_files/files/gun/swf/
+game_files/swf/*
+game_files/files/gun/swf/*
 
 # Exceptions: essential files that are NOT from CDN
 !game_files/files/gun/swf/local3241.swf
+!game_files/files/gun/swf/UI/
+!game_files/files/gun/swf/UI/TestUI.swf
+!game_files/files/gun/swf/UI/TestUI.swf
 
 # OS
 Thumbs.db
