@@ -194,6 +194,9 @@
         if (fpsMap[e.keyCode]) { setGameFPS(fpsMap[e.keyCode]); e.preventDefault(); }
     });
 
+    // Fallback: hide loading after 8 seconds even if SWF doesn't signal
+    setTimeout(function() { hideLoading(); }, 8000);
+
     // ---- Trigger SWF initialization ----
     window.addEventListener('load', function() {
         var modeObj = {
@@ -208,10 +211,16 @@
             payMoney: false
         };
 
+        function hideLoading() {
+            var el = document.getElementById('loading');
+            if (el) el.classList.add('hidden');
+        }
+
         function tryInit() {
             var swf = getSwf();
             if (swf && swf.setStyle) {
                 console.log('[Bridge] Initializing SWF...');
+                hideLoading();
                 swf.setStyle('100027788', modeObj, '<root><gameWidth>950</gameWidth><gameHeight>600</gameHeight></root>');
                 // Give the SWF time to process setStyle, then show login
                 setTimeout(function() {
