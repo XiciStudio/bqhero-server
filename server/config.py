@@ -12,7 +12,9 @@ SERVER_NAME = os.environ.get("SERVER_NAME", "sunblog.fun")
 SECRET_KEY = os.environ.get("SECRET_KEY", "change-this-in-production")
 
 # Game files directory (for static SWF serving)
-GAME_FILES_DIR = os.environ.get("GAME_FILES_DIR", r"E:\爆枪私服\game_files")
+# Default is relative to this config file: <project>/game_files
+_GAME_FILES_DIR_DEFAULT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "game_files")
+GAME_FILES_DIR = os.environ.get("GAME_FILES_DIR", _GAME_FILES_DIR_DEFAULT)
 
 # Admin
 ADMIN_KEY = os.environ.get("ADMIN_KEY", "sXk7m9TabUGvkaU77Ao9rNSLdOO1GOpt")
