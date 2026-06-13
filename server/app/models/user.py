@@ -138,3 +138,45 @@ def get_union_id(username: str) -> int | None:
 
 def set_union_by_uid(uid: str, union_id):
     execute("UPDATE user SET inunion_id = ? WHERE uid = ?", (union_id or 0, uid))
+
+
+# ---- Admin operations ----
+
+def get_user_count() -> int:
+    row = query_one("SELECT COUNT(*) as cnt FROM user")
+    return row["cnt"] if row else 0
+
+
+def get_all_users(page: int = 1, per_page: int = 20) -> tuple:
+    """Returns (users_list, total_count) for paginated listing."""
+    offset = (page - 1) * per_page
+    total = query_one("SELECT COUNT(*) as cnt FROM user")
+    total = total["cnt"] if total else 0
+    rows = query_all(
+        "SELECT username, uid, Money, TotalRecharge, inunion_id FROM user "
+        "ORDER BY uid ASC LIMIT ? OFFSET ?",
+        (per_page, offset),
+    )
+    return rows, total
+
+
+def search_users(query: str) -> list:
+    """Search users by username or uid (LIKE match). Max 100 results."""
+    pattern = f"%{query}%"
+    return query_all(
+        "SELECT username, uid, Money, TotalRecharge, inunion_id FROM user "
+        "WHERE username LIKE ? OR uid LIKE ? ORDER BY uid ASC LIMIT 100",
+        (pattern, pattern),
+    )
+
+
+def delete_user(username: str):
+    execute("DELETE FROM user WHERE username = ?", (username,))
+
+
+def update_user_money(username: str, money: int, total_recharge: int):
+    """Directly set Money and TotalRecharge for a user."""
+    execute(
+        "UPDATE user SET Money = ?, TotalRecharge = ? WHERE username = ?",
+        (money, total_recharge, username),
+    )

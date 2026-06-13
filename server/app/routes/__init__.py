@@ -21,6 +21,9 @@ def register_blueprints(app: Flask):
     from app.routes.thrift import thrift_bp
     from app.routes.mall import mall_bp
 
+    # Admin panel (session auth, must be before misc for catch-all safety)
+    from app.routes.admin import admin_bp
+
     # Misc (must be last — contains /<path:path> catch-all)
     from app.routes.misc import misc_bp
 
@@ -34,4 +37,5 @@ def register_blueprints(app: Flask):
     app.register_blueprint(amf_bp)
     app.register_blueprint(thrift_bp)
     app.register_blueprint(mall_bp)
+    app.register_blueprint(admin_bp)
     app.register_blueprint(misc_bp)

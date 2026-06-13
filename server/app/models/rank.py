@@ -28,3 +28,8 @@ def find_user_rank(rank_id: int, uid: str) -> dict | None:
         if str(item.get("uId")) == str(uid):
             return item
     return None
+
+
+def get_rank_count() -> int:
+    row = query_one("SELECT COUNT(*) as cnt FROM top")
+    return row["cnt"] if row else 0

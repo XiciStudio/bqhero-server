@@ -1,0 +1,79 @@
+{% extends "admin/base.html" %}
+{% block title %}Unions{% endblock %}
+{% block header %}Union Management{% endblock %}
+
+{% block content %}
+
+{% if show_detail and union %}
+<div class="card">
+  <h4>{{ union.info.get("name", "Unnamed") }} <span style="font-size:12px;color:#888">(ID: {{ union.info.get("id", "-") }})</span></h4>
+  <a href="{{ url_for('admin.unions') }}" class="btn btn-secondary btn-sm" style="margin-bottom:16px">&laquo; Back to List</a>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div>
+      <p style="color:#aaa;font-size:13px">Level: <span style="color:#ffd700">{{ union.info.get("level", 0) }}</span></p>
+      <p style="color:#aaa;font-size:13px">Contribution: {{ union.info.get("contribution", 0) }}</p>
+      <p style="color:#aaa;font-size:13px">Notice: {{ union.info.get("notice", "-") or "-" }}</p>
+    </div>
+    <div>
+      <p style="color:#aaa;font-size:13px">Members: {{ union.member|length if union.member else 0 }}</p>
+      <p style="color:#aaa;font-size:13px">Applications: {{ union.application|length if union.application else 0 }}</p>
+    </div>
+  </div>
+
+  {% if union.member %}
+  <h4 style="margin-top:20px">Members</h4>
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Username</th><th>UID</th><th>Level</th><th>Contribution</th></tr>
+    </thead>
+    <tbody>
+    {% for m in union.member %}
+      <tr>
+        <td>{{ m.get("name", "-") }}</td>
+        <td class="mono">{{ m.get("uId", "-") }}</td>
+        <td>{{ m.get("level", 0) }}</td>
+        <td>{{ m.get("contribution", 0) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% endif %}
+</div>
+
+{% else %}
+<div class="card">
+  <div style="color:#888;font-size:13px;margin-bottom:12px">
+    {{ unions|length }} union(s) total
+  </div>
+
+  {% if unions %}
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Name</th><th>Level</th><th>Members</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for u in unions %}
+      <tr>
+        <td class="mono">{{ u.get("id", "-") }}</td>
+        <td><strong>{{ u.get("name", "Unnamed") }}</strong></td>
+        <td><span class="badge badge-gold">{{ u.get("level", 0) }}</span></td>
+        <td>{{ u.get("memberNum", 0) }}</td>
+        <td>
+          <a href="{{ url_for('admin.union_detail', union_id=u.get('id', 0)) }}" class="btn btn-outline btn-sm">Details</a>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="empty">No unions found.</div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

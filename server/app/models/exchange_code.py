@@ -1,7 +1,7 @@
 """Exchange code database operations."""
 
 import uuid
-from app.extensions import query_one, execute
+from app.extensions import query_one, query_all, execute
 from app.utils.crypto import encrypt_exchange_code
 
 
@@ -32,3 +32,20 @@ def is_code_used(code_id: str) -> bool:
     if row:
         return bool(row["used"])
     return True  # non-existent codes treated as used
+
+
+def get_all_codes(page: int = 1, per_page: int = 20) -> tuple:
+    """Returns (codes_list, total_count) for paginated listing."""
+    offset = (page - 1) * per_page
+    total = query_one("SELECT COUNT(*) as cnt FROM exchange_code")
+    total = total["cnt"] if total else 0
+    rows = query_all(
+        "SELECT * FROM exchange_code ORDER BY rowid DESC LIMIT ? OFFSET ?",
+        (per_page, offset),
+    )
+    return rows, total
+
+
+def get_code_count() -> int:
+    row = query_one("SELECT COUNT(*) as cnt FROM exchange_code")
+    return row["cnt"] if row else 0

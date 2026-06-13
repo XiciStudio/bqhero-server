@@ -1,0 +1,33 @@
+{% extends "admin/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block header %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="num">{{ stats.users }}</div>
+    <div class="label">Total Users</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">{{ stats.codes }}</div>
+    <div class="label">Exchange Codes</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">{{ stats.unions }}</div>
+    <div class="label">Unions</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">{{ stats.ranks }}</div>
+    <div class="label">Rank Tables</div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:24px">
+  <h4>Quick Actions</h4>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
+    <a href="{{ url_for('admin.users') }}" class="btn btn-primary">Manage Users</a>
+    <a href="{{ url_for('admin.codes') }}" class="btn btn-outline">Manage Codes</a>
+    <a href="{{ url_for('admin.unions') }}" class="btn btn-outline">View Unions</a>
+  </div>
+</div>
+{% endblock %}

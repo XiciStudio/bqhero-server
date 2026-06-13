@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login — 爆枪英雄私服</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box }
+body {
+  font-family: "Microsoft YaHei", sans-serif;
+  background: #1a1a2e;
+  color: #eee;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+.card {
+  background: #16213e;
+  border-radius: 12px;
+  padding: 48px 40px;
+  width: 380px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  text-align: center;
+}
+h1 { color: #e94560; font-size: 22px; margin-bottom: 8px }
+h2 { color: #888; font-size: 13px; font-weight: normal; margin-bottom: 32px }
+input {
+  width: 100%;
+  background: #0f3460;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 12px 16px;
+  color: #eee;
+  font-size: 15px;
+  outline: none;
+  margin-bottom: 20px;
+  text-align: center;
+  letter-spacing: 4px;
+}
+input:focus { border-color: #e94560 }
+.btn {
+  width: 100%;
+  padding: 12px;
+  background: #e94560;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn:hover { background: #d63852 }
+.error {
+  background: rgba(233,69,96,0.2);
+  border: 1px solid #e94560;
+  color: #EF9A9A;
+  padding: 10px 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+.back { margin-top: 24px }
+.back a { color: #666; text-decoration: none; font-size: 13px }
+.back a:hover { color: #e94560 }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Admin Panel</h1>
+  <h2>爆枪英雄私服</h2>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="error">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <form method="POST">
+    <input type="password" name="adminkey" placeholder="Admin Key" autofocus>
+    <button type="submit" class="btn">Login</button>
+  </form>
+  <div class="back"><a href="/">Back to Game</a></div>
+</div>
+</body>
+</html>

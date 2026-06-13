@@ -1,0 +1,88 @@
+{% extends "admin/base.html" %}
+{% block title %}Users{% endblock %}
+{% block header %}User Management{% endblock %}
+
+{% block content %}
+<div class="card">
+  <form class="search-bar" method="GET">
+    <div class="form-inline">
+      <input type="text" name="q" placeholder="Search by username or UID..." value="{{ query }}" style="min-width:280px">
+      <button type="submit" class="btn btn-primary">Search</button>
+      {% if query %}
+        <a href="{{ url_for('admin.users') }}" class="btn btn-secondary btn-sm">Clear</a>
+      {% endif %}
+    </div>
+  </form>
+
+  <div style="color:#888;font-size:13px;margin-bottom:12px">
+    {% if query %}
+      Found {{ total }} result(s) for "{{ query }}"
+    {% else %}
+      {{ total }} users total — Page {{ page }} / {{ pages }}
+    {% endif %}
+  </div>
+
+  {% if users %}
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>UID</th>
+        <th>Money</th>
+        <th>Recharge</th>
+        <th>Union</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for u in users %}
+      <tr>
+        <td><strong>{{ u["username"] }}</strong></td>
+        <td class="mono">{{ u["uid"] }}</td>
+        <td><span class="badge badge-gold">{{ u["Money"] }}</span></td>
+        <td>{{ u["TotalRecharge"] }}</td>
+        <td>{{ u["inunion_id"] or "-" }}</td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="toggleEdit('{{ u['username'] }}')">Edit</button>
+          <form method="POST" action="{{ url_for('admin.user_delete', username=u['username']) }}" style="display:inline" onsubmit="return confirm('Delete user {{ u['username'] }}? This cannot be undone.')">
+            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+          </form>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="6">
+          <div class="edit-form" id="edit-{{ u['username'] }}">
+            <form method="POST" action="{{ url_for('admin.user_edit', username=u['username']) }}" class="form-row">
+              <label>Money</label>
+              <input type="number" name="money" value="{{ u['Money'] }}" style="width:100px" min="0">
+              <label>Recharge</label>
+              <input type="number" name="total_recharge" value="{{ u['TotalRecharge'] }}" style="width:100px" min="0">
+              <button type="submit" class="btn btn-primary btn-sm">Save</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleEdit('{{ u['username'] }}')">Cancel</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  {% if not query and pages > 1 %}
+  <div class="pagination">
+    {% if page > 1 %}
+      <a href="{{ url_for('admin.users', page=page-1) }}">&laquo; Prev</a>
+    {% endif %}
+    <span>Page {{ page }} of {{ pages }}</span>
+    {% if page < pages %}
+      <a href="{{ url_for('admin.users', page=page+1) }}">Next &raquo;</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="empty">No users found.</div>
+  {% endif %}
+</div>
+{% endblock %}
