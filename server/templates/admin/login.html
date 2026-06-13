@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Login — 爆枪英雄私服</title>
+<title>管理员登录 — 爆枪英雄私服</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box }
 body {
@@ -67,7 +67,7 @@ input:focus { border-color: #e94560 }
 </head>
 <body>
 <div class="card">
-  <h1>Admin Panel</h1>
+  <h1>管理后台</h1>
   <h2>爆枪英雄私服</h2>
 
   {% with messages = get_flashed_messages(with_categories=true) %}
@@ -77,10 +77,10 @@ input:focus { border-color: #e94560 }
   {% endwith %}
 
   <form method="POST">
-    <input type="password" name="adminkey" placeholder="Admin Key" autofocus>
-    <button type="submit" class="btn">Login</button>
+    <input type="password" name="adminkey" placeholder="管理员密钥" autofocus>
+    <button type="submit" class="btn">登录</button>
   </form>
-  <div class="back"><a href="/">Back to Game</a></div>
+  <div class="back"><a href="/">返回游戏</a></div>
 </div>
 </body>
 </html>

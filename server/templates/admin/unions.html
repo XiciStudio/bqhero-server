@@ -1,32 +1,32 @@
 {% extends "admin/base.html" %}
-{% block title %}Unions{% endblock %}
-{% block header %}Union Management{% endblock %}
+{% block title %}工会管理{% endblock %}
+{% block header %}工会管理{% endblock %}
 
 {% block content %}
 
 {% if show_detail and union %}
 <div class="card">
-  <h4>{{ union.info.get("name", "Unnamed") }} <span style="font-size:12px;color:#888">(ID: {{ union.info.get("id", "-") }})</span></h4>
-  <a href="{{ url_for('admin.unions') }}" class="btn btn-secondary btn-sm" style="margin-bottom:16px">&laquo; Back to List</a>
+  <h4>{{ union.info.get("name", "未命名") }} <span style="font-size:12px;color:#888">(ID: {{ union.info.get("id", "-") }})</span></h4>
+  <a href="{{ url_for('admin.unions') }}" class="btn btn-secondary btn-sm" style="margin-bottom:16px">&laquo; 返回列表</a>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
     <div>
-      <p style="color:#aaa;font-size:13px">Level: <span style="color:#ffd700">{{ union.info.get("level", 0) }}</span></p>
-      <p style="color:#aaa;font-size:13px">Contribution: {{ union.info.get("contribution", 0) }}</p>
-      <p style="color:#aaa;font-size:13px">Notice: {{ union.info.get("notice", "-") or "-" }}</p>
+      <p style="color:#aaa;font-size:13px">等级：<span style="color:#ffd700">{{ union.info.get("level", 0) }}</span></p>
+      <p style="color:#aaa;font-size:13px">贡献度：{{ union.info.get("contribution", 0) }}</p>
+      <p style="color:#aaa;font-size:13px">公告：{{ union.info.get("notice", "-") or "-" }}</p>
     </div>
     <div>
-      <p style="color:#aaa;font-size:13px">Members: {{ union.member|length if union.member else 0 }}</p>
-      <p style="color:#aaa;font-size:13px">Applications: {{ union.application|length if union.application else 0 }}</p>
+      <p style="color:#aaa;font-size:13px">成员数：{{ union.member|length if union.member else 0 }}</p>
+      <p style="color:#aaa;font-size:13px">申请数：{{ union.application|length if union.application else 0 }}</p>
     </div>
   </div>
 
   {% if union.member %}
-  <h4 style="margin-top:20px">Members</h4>
+  <h4 style="margin-top:20px">成员列表</h4>
   <div class="table-wrap">
   <table>
     <thead>
-      <tr><th>Username</th><th>UID</th><th>Level</th><th>Contribution</th></tr>
+      <tr><th>用户名</th><th>UID</th><th>等级</th><th>贡献度</th></tr>
     </thead>
     <tbody>
     {% for m in union.member %}
@@ -46,24 +46,24 @@
 {% else %}
 <div class="card">
   <div style="color:#888;font-size:13px;margin-bottom:12px">
-    {{ unions|length }} union(s) total
+    共 {{ unions|length }} 个工会
   </div>
 
   {% if unions %}
   <div class="table-wrap">
   <table>
     <thead>
-      <tr><th>ID</th><th>Name</th><th>Level</th><th>Members</th><th></th></tr>
+      <tr><th>ID</th><th>名称</th><th>等级</th><th>成员数</th><th></th></tr>
     </thead>
     <tbody>
     {% for u in unions %}
       <tr>
         <td class="mono">{{ u.get("id", "-") }}</td>
-        <td><strong>{{ u.get("name", "Unnamed") }}</strong></td>
+        <td><strong>{{ u.get("name", "未命名") }}</strong></td>
         <td><span class="badge badge-gold">{{ u.get("level", 0) }}</span></td>
         <td>{{ u.get("memberNum", 0) }}</td>
         <td>
-          <a href="{{ url_for('admin.union_detail', union_id=u.get('id', 0)) }}" class="btn btn-outline btn-sm">Details</a>
+          <a href="{{ url_for('admin.union_detail', union_id=u.get('id', 0)) }}" class="btn btn-outline btn-sm">详情</a>
         </td>
       </tr>
     {% endfor %}
@@ -71,7 +71,7 @@
   </table>
   </div>
   {% else %}
-  <div class="empty">No unions found.</div>
+  <div class="empty">暂无工会。</div>
   {% endif %}
 </div>
 {% endif %}

@@ -1,24 +1,24 @@
 {% extends "admin/base.html" %}
-{% block title %}Users{% endblock %}
-{% block header %}User Management{% endblock %}
+{% block title %}用户管理{% endblock %}
+{% block header %}用户管理{% endblock %}
 
 {% block content %}
 <div class="card">
   <form class="search-bar" method="GET">
     <div class="form-inline">
-      <input type="text" name="q" placeholder="Search by username or UID..." value="{{ query }}" style="min-width:280px">
-      <button type="submit" class="btn btn-primary">Search</button>
+      <input type="text" name="q" placeholder="按用户名或UID搜索..." value="{{ query }}" style="min-width:280px">
+      <button type="submit" class="btn btn-primary">搜索</button>
       {% if query %}
-        <a href="{{ url_for('admin.users') }}" class="btn btn-secondary btn-sm">Clear</a>
+        <a href="{{ url_for('admin.users') }}" class="btn btn-secondary btn-sm">清除</a>
       {% endif %}
     </div>
   </form>
 
   <div style="color:#888;font-size:13px;margin-bottom:12px">
     {% if query %}
-      Found {{ total }} result(s) for "{{ query }}"
+      找到 {{ total }} 条关于 "{{ query }}" 的结果
     {% else %}
-      {{ total }} users total — Page {{ page }} / {{ pages }}
+      共 {{ total }} 个用户 — 第 {{ page }} / {{ pages }} 页
     {% endif %}
   </div>
 
@@ -27,12 +27,12 @@
   <table>
     <thead>
       <tr>
-        <th>Username</th>
+        <th>用户名</th>
         <th>UID</th>
-        <th>Money</th>
-        <th>Recharge</th>
-        <th>Union</th>
-        <th>Actions</th>
+        <th>金币</th>
+        <th>累计充值</th>
+        <th>工会ID</th>
+        <th>操作</th>
       </tr>
     </thead>
     <tbody>
@@ -44,9 +44,9 @@
         <td>{{ u["TotalRecharge"] }}</td>
         <td>{{ u["inunion_id"] or "-" }}</td>
         <td>
-          <button class="btn btn-outline btn-sm" onclick="toggleEdit('{{ u['username'] }}')">Edit</button>
-          <form method="POST" action="{{ url_for('admin.user_delete', username=u['username']) }}" style="display:inline" onsubmit="return confirm('Delete user {{ u['username'] }}? This cannot be undone.')">
-            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+          <button class="btn btn-outline btn-sm" onclick="toggleEdit('{{ u['username'] }}')">编辑</button>
+          <form method="POST" action="{{ url_for('admin.user_delete', username=u['username']) }}" style="display:inline" onsubmit="return confirm('确定删除用户 {{ u['username'] }}？此操作不可撤销。')">
+            <button type="submit" class="btn btn-danger btn-sm">删除</button>
           </form>
         </td>
       </tr>
@@ -54,12 +54,12 @@
         <td colspan="6">
           <div class="edit-form" id="edit-{{ u['username'] }}">
             <form method="POST" action="{{ url_for('admin.user_edit', username=u['username']) }}" class="form-row">
-              <label>Money</label>
+              <label>金币</label>
               <input type="number" name="money" value="{{ u['Money'] }}" style="width:100px" min="0">
-              <label>Recharge</label>
+              <label>充值</label>
               <input type="number" name="total_recharge" value="{{ u['TotalRecharge'] }}" style="width:100px" min="0">
-              <button type="submit" class="btn btn-primary btn-sm">Save</button>
-              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleEdit('{{ u['username'] }}')">Cancel</button>
+              <button type="submit" class="btn btn-primary btn-sm">保存</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleEdit('{{ u['username'] }}')">取消</button>
             </form>
           </div>
         </td>
@@ -72,17 +72,17 @@
   {% if not query and pages > 1 %}
   <div class="pagination">
     {% if page > 1 %}
-      <a href="{{ url_for('admin.users', page=page-1) }}">&laquo; Prev</a>
+      <a href="{{ url_for('admin.users', page=page-1) }}">&laquo; 上一页</a>
     {% endif %}
-    <span>Page {{ page }} of {{ pages }}</span>
+    <span>第 {{ page }} / {{ pages }} 页</span>
     {% if page < pages %}
-      <a href="{{ url_for('admin.users', page=page+1) }}">Next &raquo;</a>
+      <a href="{{ url_for('admin.users', page=page+1) }}">下一页 &raquo;</a>
     {% endif %}
   </div>
   {% endif %}
 
   {% else %}
-  <div class="empty">No users found.</div>
+  <div class="empty">暂无用户。</div>
   {% endif %}
 </div>
 {% endblock %}

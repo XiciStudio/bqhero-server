@@ -1,25 +1,25 @@
 {% extends "admin/base.html" %}
-{% block title %}Exchange Codes{% endblock %}
-{% block header %}Exchange Code Management{% endblock %}
+{% block title %}兑换码管理{% endblock %}
+{% block header %}兑换码管理{% endblock %}
 
 {% block content %}
 <div class="card">
-  <h4>Create New Code</h4>
+  <h4>创建新兑换码</h4>
   <form method="POST" action="{{ url_for('admin.code_create') }}" class="form-row">
-    <label>Type</label>
+    <label>类型</label>
     <select name="type" style="width:140px">
-      <option value="Money">Money</option>
+      <option value="Money">金币</option>
     </select>
-    <label>Amount</label>
+    <label>金额</label>
     <input type="number" name="num" value="1000" style="width:100px" min="1">
-    <button type="submit" class="btn btn-primary">Generate</button>
+    <button type="submit" class="btn btn-primary">生成</button>
   </form>
 </div>
 
 <div class="card">
-  <h4>All Codes</h4>
+  <h4>全部兑换码</h4>
   <div style="color:#888;font-size:13px;margin-bottom:12px">
-    {{ total }} codes total — Page {{ page }} / {{ pages }}
+    共 {{ total }} 条 — 第 {{ page }} / {{ pages }} 页
   </div>
 
   {% if codes %}
@@ -27,10 +27,10 @@
   <table>
     <thead>
       <tr>
-        <th>ID</th>
-        <th>Type</th>
-        <th>Amount</th>
-        <th>Used</th>
+        <th>编号</th>
+        <th>类型</th>
+        <th>金额</th>
+        <th>状态</th>
       </tr>
     </thead>
     <tbody>
@@ -41,9 +41,9 @@
         <td><span class="badge badge-gold">{{ c["num"] }}</span></td>
         <td>
           {% if c["used"] %}
-            <span class="badge badge-yes">Yes</span>
+            <span class="badge badge-yes">已使用</span>
           {% else %}
-            <span class="badge badge-no">No</span>
+            <span class="badge badge-no">未使用</span>
           {% endif %}
         </td>
       </tr>
@@ -55,17 +55,17 @@
   {% if pages > 1 %}
   <div class="pagination">
     {% if page > 1 %}
-      <a href="{{ url_for('admin.codes', page=page-1) }}">&laquo; Prev</a>
+      <a href="{{ url_for('admin.codes', page=page-1) }}">&laquo; 上一页</a>
     {% endif %}
-    <span>Page {{ page }} of {{ pages }}</span>
+    <span>第 {{ page }} / {{ pages }} 页</span>
     {% if page < pages %}
-      <a href="{{ url_for('admin.codes', page=page+1) }}">Next &raquo;</a>
+      <a href="{{ url_for('admin.codes', page=page+1) }}">下一页 &raquo;</a>
     {% endif %}
   </div>
   {% endif %}
 
   {% else %}
-  <div class="empty">No codes created yet.</div>
+  <div class="empty">暂无兑换码。</div>
   {% endif %}
 </div>
 {% endblock %}

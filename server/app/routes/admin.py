@@ -32,7 +32,7 @@ def login():
         if request.form.get("adminkey") == ADMIN_KEY:
             session["admin_authenticated"] = True
             return redirect(url_for("admin.dashboard"))
-        flash("Invalid admin key", "error")
+        flash("管理员密钥错误", "error")
     return render_template("admin/login.html")
 
 
@@ -89,12 +89,12 @@ def user_edit(username):
         money = int(request.form.get("money", 0))
         recharge = int(request.form.get("total_recharge", 0))
         if money < 0 or recharge < 0:
-            flash("Money and recharge must be non-negative", "error")
+            flash("金币和充值金额不能为负数", "error")
         else:
             update_user_money(username, money, recharge)
-            flash(f"Updated {username}: Money={money}, Recharge={recharge}", "success")
+            flash(f"已更新 {username}：金币={money}，充值={recharge}", "success")
     except ValueError:
-        flash("Invalid numeric value", "error")
+        flash("无效的数值", "error")
     return redirect(url_for("admin.users"))
 
 
@@ -102,7 +102,7 @@ def user_edit(username):
 @admin_required
 def user_delete(username):
     delete_user(username)
-    flash(f"User '{username}' deleted", "success")
+    flash(f'用户 "{username}" 已删除', "success")
     return redirect(url_for("admin.users"))
 
 
@@ -129,7 +129,7 @@ def code_create():
     code_type = request.form.get("type", "Money")
     num = int(request.form.get("num", 0))
     encrypted = create_code(code_type, num)
-    flash(f"Created: {encrypted}", "success")
+    flash(f"已创建兑换码：{encrypted}", "success")
     return redirect(url_for("admin.codes"))
 
 
@@ -147,6 +147,6 @@ def unions():
 def union_detail(union_id):
     union = get_union_by_id(union_id)
     if not union:
-        flash("Union not found", "error")
+        flash("工会不存在", "error")
         return redirect(url_for("admin.unions"))
     return render_template("admin/unions.html", union=union, show_detail=True)

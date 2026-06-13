@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{% block title %}Admin Panel{% endblock %} — 爆枪英雄私服</title>
+<title>{% block title %}管理后台{% endblock %} — 爆枪英雄私服</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box }
 
@@ -188,19 +188,19 @@ input:focus, select:focus { border-color: #e94560 }
 <body>
 
 <div class="sidebar">
-  <h2>Admin</h2>
-  <a href="{{ url_for('admin.dashboard') }}" class="{{ 'active' if request.path == '/admin' }}">Dashboard</a>
-  <a href="{{ url_for('admin.users') }}" class="{{ 'active' if request.path.startswith('/admin/users') }}">Users</a>
-  <a href="{{ url_for('admin.codes') }}" class="{{ 'active' if request.path.startswith('/admin/codes') }}">Codes</a>
-  <a href="{{ url_for('admin.unions') }}" class="{{ 'active' if request.path.startswith('/admin/unions') }}">Unions</a>
+  <h2>管理后台</h2>
+  <a href="{{ url_for('admin.dashboard') }}" class="{{ 'active' if request.path == '/admin' }}">仪表盘</a>
+  <a href="{{ url_for('admin.users') }}" class="{{ 'active' if request.path.startswith('/admin/users') }}">用户管理</a>
+  <a href="{{ url_for('admin.codes') }}" class="{{ 'active' if request.path.startswith('/admin/codes') }}">兑换码</a>
+  <a href="{{ url_for('admin.unions') }}" class="{{ 'active' if request.path.startswith('/admin/unions') }}">工会管理</a>
   <div class="spacer"></div>
-  <div class="back-link"><a href="/">&#8592; Back to Game</a></div>
+  <div class="back-link"><a href="/">&#8592; 返回游戏</a></div>
 </div>
 
 <div class="main">
   <div class="topbar">
-    <h3>{% block header %}Admin Panel{% endblock %}</h3>
-    <a href="{{ url_for('admin.logout') }}" class="logout">Logout</a>
+    <h3>{% block header %}管理后台{% endblock %}</h3>
+    <a href="{{ url_for('admin.logout') }}" class="logout">退出登录</a>
   </div>
   <div class="content">
     {% with messages = get_flashed_messages(with_categories=true) %}
