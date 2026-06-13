@@ -60,6 +60,39 @@ def upgrade_password(username: str, password: str):
     execute("UPDATE user SET password = ? WHERE username = ?", (hashed, username))
 
 
+def update_password(username: str, new_password: str):
+    """Set a new password for the user."""
+    hashed = generate_password_hash(new_password)
+    execute("UPDATE user SET password = ? WHERE username = ?", (hashed, username))
+
+
+def get_user_info(username: str) -> dict | None:
+    """Get full user info including created_at."""
+    return query_one(
+        "SELECT username, uid, Money, TotalRecharge, inunion_id, created_at "
+        "FROM user WHERE username = ?",
+        (username,),
+    )
+
+
+def update_last_active(username: str):
+    """Update the last_active timestamp for a user."""
+    execute(
+        "UPDATE user SET last_active = datetime('now','localtime') WHERE username = ?",
+        (username,),
+    )
+
+
+def get_online_count() -> int:
+    """Count users active in the last 5 minutes."""
+    row = query_one(
+        "SELECT COUNT(*) as cnt FROM user "
+        "WHERE last_active IS NOT NULL "
+        "AND last_active > datetime('now','localtime','-5 minutes')"
+    )
+    return row["cnt"] if row else 0
+
+
 def check_user_exists(username: str) -> bool:
     row = query_one("SELECT 1 FROM user WHERE username = ?", (username,))
     return row is not None

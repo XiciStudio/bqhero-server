@@ -33,7 +33,9 @@ CREATE TABLE IF NOT EXISTS `user` (
     `data_5` TEXT,
     `data_6` TEXT,
     `data_7` TEXT,
-    `inunion_id` INTEGER DEFAULT NULL
+    `inunion_id` INTEGER DEFAULT NULL,
+    `created_at` TEXT DEFAULT (datetime('now','localtime')),
+    `last_active` TEXT
 );
 
 CREATE TABLE IF NOT EXISTS `top` (
@@ -45,7 +47,10 @@ CREATE TABLE IF NOT EXISTS `exchange_code` (
     `id` TEXT NOT NULL,
     `num` INTEGER NOT NULL DEFAULT 0,
     `type` TEXT NOT NULL,
-    `used` INTEGER NOT NULL DEFAULT 0
+    `used` INTEGER NOT NULL DEFAULT 0,
+    `used_by` TEXT,
+    `used_at` TEXT,
+    `encrypted_code` TEXT
 );
 
 CREATE TABLE IF NOT EXISTS `union_data` (
@@ -76,12 +81,46 @@ def create_tables():
     conn.executescript(SCHEMA_SQL)
     conn.commit()
 
+    # 迁移：为现有 user 表添加 created_at 列（如果不存在）
+    try:
+        conn.execute("SELECT created_at FROM user LIMIT 1")
+    except sqlite3.OperationalError:
+        print("  [MIGRATE] adding created_at column...")
+        conn.execute("ALTER TABLE user ADD COLUMN created_at TEXT")
+        conn.execute("UPDATE user SET created_at = datetime('now','localtime') WHERE created_at IS NULL")
+        conn.commit()
+
+    # 迁移：last_active 列
+    try:
+        conn.execute("SELECT last_active FROM user LIMIT 1")
+    except sqlite3.OperationalError:
+        print("  [MIGRATE] adding last_active column...")
+        conn.execute("ALTER TABLE user ADD COLUMN last_active TEXT")
+        conn.commit()
+
+    # 迁移：exchange_code 添加 used_by, used_at 列
+    try:
+        conn.execute("SELECT used_by FROM exchange_code LIMIT 1")
+    except sqlite3.OperationalError:
+        print("  [MIGRATE] adding used_by/used_at to exchange_code...")
+        conn.execute("ALTER TABLE exchange_code ADD COLUMN used_by TEXT")
+        conn.execute("ALTER TABLE exchange_code ADD COLUMN used_at TEXT")
+        conn.commit()
+
+    # 迁移：exchange_code 添加 encrypted_code 列
+    try:
+        conn.execute("SELECT encrypted_code FROM exchange_code LIMIT 1")
+    except sqlite3.OperationalError:
+        print("  [MIGRATE] adding encrypted_code to exchange_code...")
+        conn.execute("ALTER TABLE exchange_code ADD COLUMN encrypted_code TEXT")
+        conn.commit()
+
     # 验证
     tables = conn.execute(
         "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
     ).fetchall()
     for t in tables:
-        print(f"  ✓ 表 '{t['name']}' 已就绪")
+        print(f"  [OK] table '{t['name']}' ready")
 
     conn.close()
     print("\n所有表创建成功。")
@@ -100,7 +139,7 @@ def seed_data():
             ("admin", "pbkdf2:sha256:placeholder", "100001", "[]", 99999, 99999),
         )
         conn.commit()
-        print("  ✓ 创建管理员用户 (uid: 100001, 密码: admin123)")
+        print("  [OK] admin user created (uid: 100001, password: admin123)")
         print("    注意: 首次登录后请修改密码！")
 
     conn.close()

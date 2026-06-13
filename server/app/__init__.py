@@ -73,6 +73,25 @@ def _setup_middleware(app: Flask):
 
         return response
 
+    @app.route("/flash_ctrl_version.xml")
+    def flash_ctrl_version():
+        """Serve flash_ctrl_version.xml locally with absolute paths.
+
+        The platform SWF fetches this from stat.api.4399.com, but the
+        returned relative paths break when the SWF isn't at domain root.
+        We intercept and return absolute paths so ctrl_mo_v5.swf and
+        A4399dv_base.swf load from our local server instead of CDN.
+        """
+        xml = (
+            '<?xml version="1.0" encoding="utf-8"?>\n'
+            "<root>\n"
+            '    <ctrl_v5>/files/ctrl_mo_v5.swf</ctrl_v5>\n'
+            "    <zwsf></zwsf>\n"
+            '    <ads>/files/A4399dv_base.swf</ads>\n'
+            "</root>\n"
+        )
+        return Response(xml, mimetype="application/xml")
+
     @app.errorhandler(404)
     def not_found(e):
         """Handle 404 — try CDN download for missing game resources."""

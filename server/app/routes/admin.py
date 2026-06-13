@@ -7,6 +7,7 @@ from config import ADMIN_KEY
 from app.models.user import (
     get_user_count, get_all_users, search_users,
     delete_user, update_user_money, get_recent_users,
+    update_password,
 )
 from app.models.exchange_code import get_code_count, get_all_codes, create_code
 from app.models.rank import get_rank_count
@@ -110,6 +111,18 @@ def user_edit(username):
 def user_delete(username):
     delete_user(username)
     flash(f'用户 "{username}" 已删除', "success")
+    return redirect(url_for("admin.users"))
+
+
+@admin_bp.route("/admin/users/<username>/reset-password", methods=["POST"])
+@admin_required
+def user_reset_password(username):
+    new_pw = request.form.get("new_password", "").strip()
+    if not new_pw or len(new_pw) < 4:
+        flash("密码长度不能少于4位", "error")
+    else:
+        update_password(username, new_pw)
+        flash(f'已重置 "{username}" 的密码', "success")
     return redirect(url_for("admin.users"))
 
 

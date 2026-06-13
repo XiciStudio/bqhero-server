@@ -10,11 +10,13 @@ import time
 import urllib.request
 
 from flask import (Blueprint, request, render_template, send_from_directory,
-                   make_response, redirect, Response, flash)
+                   make_response, redirect, Response, flash, session)
 
 logger = logging.getLogger("bqtj")
 
-from app.models.user import get_save_metadata, get_game_data, get_money, get_total_recharge, add_money
+from app.models.user import get_save_metadata, get_game_data, get_money, get_total_recharge, add_money, get_uid_by_username, update_last_active, get_online_count
+from app.models.exchange_code import get_recent_redemptions
+
 from app.utils.helpers import get_user_from_cookies
 from app.utils.crypto import encrypt_money, decrypt_exchange_code
 from app.models.exchange_code import is_code_used, mark_code_used
@@ -27,20 +29,42 @@ misc_bp = Blueprint("misc", __name__)
 #  Pages
 # ═══════════════════════════════════════════════════════════════
 
+def _new_csrf():
+    """Generate and store a new CSRF token in session."""
+    import uuid
+    token = uuid.uuid4().hex
+    session["_csrf"] = token
+    return token
+
+
+def _check_csrf():
+    """Validate CSRF token from form."""
+    token = request.form.get("_csrf", "")
+    return token and token == session.get("_csrf")
+
+
 @misc_bp.route("/", methods=["POST", "GET"])
 def index():
     username = request.cookies.get("username")
     if username:
         money = get_money(username)
-        return render_template("home.html", Money=money)
-    return render_template("index.html")
+        uid = get_uid_by_username(username)
+        total_recharge = get_total_recharge(username)
+        update_last_active(username)
+        online = get_online_count()
+        redemptions = get_recent_redemptions(username, limit=5)
+        csrf = _new_csrf()
+        return render_template("home.html", Money=money, username=username, uid=uid,
+                               TotalRecharge=total_recharge, online_count=online,
+                               redemptions=redemptions, csrf=csrf)
+    return render_template("index.html", csrf=_new_csrf())
 
 
 @misc_bp.route("/BQTJ", methods=["POST", "GET"])
 def play():
     username = request.cookies.get("username")
     if username:
-        return render_template("bqv3241.html")
+        return render_template("bqv3621.html")
     return render_template("index.html")
 
 
@@ -52,6 +76,10 @@ def redeem_page():
         return redirect("/")
 
     if request.method == "POST":
+        if not _check_csrf():
+            flash("请求无效，请刷新页面重试", "error")
+            return redirect("/")
+
         code_str = request.form.get("code", "").strip()
         if not code_str:
             flash("请输入兑换码", "error")
@@ -72,7 +100,7 @@ def redeem_page():
             return redirect("/")
 
         if code_type == "Money":
-            mark_code_used(code_id)
+            mark_code_used(code_id, user["username"])
             new_balance = add_money(user["username"], num)
             flash(f"兑换成功！获得 {num} 金币，当前余额 {new_balance}", "success")
         else:

@@ -100,8 +100,8 @@
             </div>
         </div>
         <object id="gameSwf" width="950" height="600" type="application/x-shockwave-flash"
-                data="/files/gun/v3241.swf">
-            <param name="movie" value="/files/gun/v3241.swf">
+                data="/files/gun/v3621.swf">
+            <param name="movie" value="/files/gun/v3621.swf">
             <param name="quality" value="high">
             <param name="allowScriptAccess" value="always">
             <param name="wmode" value="direct">
@@ -160,6 +160,7 @@
     // Called by SWF platform when basic init done (before game asset loading)
     function ctrlInitCompleted() {
         console.log('[Bridge] Platform init completed');
+        hideLoading();
     }
 
     // Called by SWF on login/logout
