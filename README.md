@@ -111,3 +111,7 @@ Key environment variables (see `server/config.py` for full list):
 ## License
 
 MIT
+
+## Disclaimer
+
+本项目仅供学习研究使用。详见 [DISCLAIMER.md](DISCLAIMER.md)。
