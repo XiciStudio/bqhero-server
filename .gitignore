@@ -26,6 +26,9 @@ cdn_log.txt
 game_files/swf/
 game_files/files/gun/swf/
 
+# Exceptions: essential files that are NOT from CDN
+!game_files/files/gun/swf/local3241.swf
+
 # OS
 Thumbs.db
 Desktop.ini
