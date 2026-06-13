@@ -47,6 +47,43 @@
             animation: spin 0.8s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg) } }
+
+        /* Progress bar */
+        .progress-wrap {
+            width: 260px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .progress-track {
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: #e94560;
+            border-radius: 2px;
+            transition: width 0.3s ease-out;
+        }
+        .progress-text {
+            font-family: "Fira Code", "Consolas", monospace;
+            font-size: 12px;
+            color: #94a3b8;
+            letter-spacing: 1px;
+        }
+        .progress-desc {
+            font-size: 11px;
+            color: #64748b;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -54,6 +91,13 @@
         <div id="loading">
             <div class="spinner"></div>
             <span>游戏加载中...</span>
+            <div class="progress-wrap">
+                <div class="progress-track">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <span class="progress-text" id="progressText">0%</span>
+                <span class="progress-desc" id="progressDesc"></span>
+            </div>
         </div>
         <object id="gameSwf" width="950" height="600" type="application/x-shockwave-flash"
                 data="/files/gun/v3241.swf">
@@ -113,11 +157,9 @@
         console.log('[SWF]', msg);
     }
 
-    // Called by SWF when init complete
+    // Called by SWF platform when basic init done (before game asset loading)
     function ctrlInitCompleted() {
-        console.log('[Bridge] SWF init completed');
-        var loading = document.getElementById('loading');
-        if (loading) loading.classList.add('hidden');
+        console.log('[Bridge] Platform init completed');
     }
 
     // Called by SWF on login/logout
@@ -194,8 +236,48 @@
         if (fpsMap[e.keyCode]) { setGameFPS(fpsMap[e.keyCode]); e.preventDefault(); }
     });
 
-    // Fallback: hide loading after 8 seconds even if SWF doesn't signal
-    setTimeout(function() { hideLoading(); }, 8000);
+    // ---- Progress Bar (driven by SWF's LoadingUI via ExternalInterface) ----
+    var progressEl = document.getElementById('progressFill');
+    var progressTextEl = document.getElementById('progressText');
+    var progressDescEl = document.getElementById('progressDesc');
+    var loadComplete = false;
+
+    function hideLoading() {
+        var el = document.getElementById('loading');
+        if (el) el.classList.add('hidden');
+    }
+
+    // Called by SWF game's LoadingUI.FTimer() — REAL loading progress
+    // per: 0-1 overall progress, text: "正在加载XXX（3/15）"
+    function setSwfProgress(per, text) {
+        if (loadComplete) return;
+        if (progressEl) {
+            var pct = Math.round(Math.min(per, 1) * 100);
+            progressEl.style.width = pct + '%';
+            progressTextEl.textContent = pct + '%';
+        }
+        if (progressDescEl && text) {
+            progressDescEl.textContent = text;
+        }
+    }
+
+    // Called by SWF game when all assets loaded
+    function swfReady() {
+        if (loadComplete) return;
+        loadComplete = true;
+        console.log('[Bridge] Game reports ready — hiding loading screen');
+        if (progressEl) progressEl.style.width = '100%';
+        if (progressTextEl) progressTextEl.textContent = '100%';
+        setTimeout(hideLoading, 300);
+    }
+
+    // Fallback: force complete after 12 seconds
+    setTimeout(function() {
+        if (!loadComplete) {
+            console.log('[Bridge] Timeout — forcing load complete');
+            swfReady();
+        }
+    }, 12000);
 
     // ---- Trigger SWF initialization ----
     window.addEventListener('load', function() {
@@ -211,16 +293,10 @@
             payMoney: false
         };
 
-        function hideLoading() {
-            var el = document.getElementById('loading');
-            if (el) el.classList.add('hidden');
-        }
-
         function tryInit() {
             var swf = getSwf();
             if (swf && swf.setStyle) {
-                console.log('[Bridge] Initializing SWF...');
-                hideLoading();
+                console.log('[Bridge] Initializing SWF platform...');
                 swf.setStyle('100027788', modeObj, '<root><gameWidth>950</gameWidth><gameHeight>600</gameHeight></root>');
                 // Give the SWF time to process setStyle, then show login
                 setTimeout(function() {
