@@ -21,6 +21,7 @@ Flash game private server compatible with the 4399 game client
 - Union (guild) system with 11 endpoints
 - Player ranking system
 - Exchange code redemption
+- Web admin panel (`/admin`) with Chinese UI — user/code/union management
 - CDN auto-download for missing game assets
 - AMF3 data serialization (Flash compatible)
 
@@ -59,6 +60,7 @@ Server starts at `http://localhost:8080`.
 │   │   │   ├── union.py       # Guild management
 │   │   │   ├── rank.py        # Leaderboard
 │   │   │   ├── exchange.py    # Code redemption
+│   │   │   ├── admin.py        # Admin panel
 │   │   │   ├── amf_utils.py   # AMF3 encode/decode
 │   │   │   ├── mall.py        # In-game mall (stub)
 │   │   │   ├── thrift.py      # Thrift API (stub)
@@ -68,7 +70,8 @@ Server starts at `http://localhost:8080`.
 │   │       ├── amf3.py        # AMF3 ByteArray
 │   │       ├── helpers.py     # Auth helpers
 │   │       └── thrift_stub.py # Thrift client stub
-│   ├── templates/             # HTML pages
+│   ├── templates/
+│   │   └── admin/             # Admin panel pages
 │   └── modified_scripts/      # ActionScript patches (reference)
 ├── game_files/                # Game SWF assets
 ├── schema.sql                 # Database schema
@@ -85,6 +88,7 @@ Server starts at `http://localhost:8080`.
 | `/_4399/submit` `/_4399/getRankingByPage` | Rankings |
 | `/_4399/union*` (11 endpoints) | Union system |
 | `/api/exchange_code` `/admin/add_code` | Exchange codes |
+| `/admin` `/admin/users` `/admin/codes` `/admin/unions` | Admin panel |
 | `/api/4399/Datadecode` `/api/4399/Dataencode` | AMF3 utilities |
 
 ## Game Assets
