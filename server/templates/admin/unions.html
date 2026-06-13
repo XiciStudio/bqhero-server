@@ -5,24 +5,50 @@
 {% block content %}
 
 {% if show_detail and union %}
-<div class="card">
-  <h4>{{ union.info.get("name", "未命名") }} <span style="font-size:12px;color:#888">(ID: {{ union.info.get("id", "-") }})</span></h4>
-  <a href="{{ url_for('admin.unions') }}" class="btn btn-secondary btn-sm" style="margin-bottom:16px">&laquo; 返回列表</a>
+<div class="breadcrumb">
+  <a href="{{ url_for('admin.unions') }}">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    工会列表
+  </a>
+  <span>&rsaquo;</span>
+  <span>{{ union.info.get("name", "未命名") }}</span>
+</div>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-    <div>
-      <p style="color:#aaa;font-size:13px">等级：<span style="color:#ffd700">{{ union.info.get("level", 0) }}</span></p>
-      <p style="color:#aaa;font-size:13px">贡献度：{{ union.info.get("contribution", 0) }}</p>
-      <p style="color:#aaa;font-size:13px">公告：{{ union.info.get("notice", "-") or "-" }}</p>
-    </div>
-    <div>
-      <p style="color:#aaa;font-size:13px">成员数：{{ union.member|length if union.member else 0 }}</p>
-      <p style="color:#aaa;font-size:13px">申请数：{{ union.application|length if union.application else 0 }}</p>
-    </div>
+<div class="card">
+  <div class="card-header">
+    <h4>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      {{ union.info.get("name", "未命名") }}
+    </h4>
+    <span class="badge badge-muted" style="font-family:var(--font-mono)">ID: {{ union.info.get("id", "-") }}</span>
   </div>
 
-  {% if union.member %}
-  <h4 style="margin-top:20px">成员列表</h4>
+  <div class="detail-grid">
+    <div class="detail-item">
+      <span class="dl">等级</span>
+      <span class="dv" style="color:var(--gold)">{{ union.info.get("level", 0) }}</span>
+    </div>
+    <div class="detail-item">
+      <span class="dl">贡献度</span>
+      <span class="dv">{{ union.info.get("contribution", 0) }}</span>
+    </div>
+    <div class="detail-item">
+      <span class="dl">公告</span>
+      <span class="dv">{{ union.info.get("notice", "-") or "-" }}</span>
+    </div>
+    <div class="detail-item">
+      <span class="dl">成员 / 申请</span>
+      <span class="dv">{{ union.member|length if union.member else 0 }} / {{ union.application|length if union.application else 0 }}</span>
+    </div>
+  </div>
+</div>
+
+{% if union.member %}
+<div class="card">
+  <h4>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    成员列表
+  </h4>
   <div class="table-wrap">
   <table>
     <thead>
@@ -31,7 +57,7 @@
     <tbody>
     {% for m in union.member %}
       <tr>
-        <td>{{ m.get("name", "-") }}</td>
+        <td><strong>{{ m.get("name", "-") }}</strong></td>
         <td class="mono">{{ m.get("uId", "-") }}</td>
         <td>{{ m.get("level", 0) }}</td>
         <td>{{ m.get("contribution", 0) }}</td>
@@ -40,12 +66,12 @@
     </tbody>
   </table>
   </div>
-  {% endif %}
 </div>
+{% endif %}
 
 {% else %}
 <div class="card">
-  <div style="color:#888;font-size:13px;margin-bottom:12px">
+  <div class="card-subtitle">
     共 {{ unions|length }} 个工会
   </div>
 
@@ -53,7 +79,7 @@
   <div class="table-wrap">
   <table>
     <thead>
-      <tr><th>ID</th><th>名称</th><th>等级</th><th>成员数</th><th></th></tr>
+      <tr><th>ID</th><th>名称</th><th>等级</th><th>成员数</th><th>操作</th></tr>
     </thead>
     <tbody>
     {% for u in unions %}
@@ -63,7 +89,10 @@
         <td><span class="badge badge-gold">{{ u.get("level", 0) }}</span></td>
         <td>{{ u.get("memberNum", 0) }}</td>
         <td>
-          <a href="{{ url_for('admin.union_detail', union_id=u.get('id', 0)) }}" class="btn btn-outline btn-sm">详情</a>
+          <a href="{{ url_for('admin.union_detail', union_id=u.get('id', 0)) }}" class="btn btn-outline btn-sm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            详情
+          </a>
         </td>
       </tr>
     {% endfor %}
@@ -71,7 +100,10 @@
   </table>
   </div>
   {% else %}
-  <div class="empty">暂无工会。</div>
+  <div class="empty">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    暂无工会。
+  </div>
   {% endif %}
 </div>
 {% endif %}

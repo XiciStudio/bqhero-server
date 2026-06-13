@@ -1,107 +1,158 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>爆枪英雄私服 - 登录</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: "Microsoft YaHei", sans-serif;
-            background: #1a1a2e;
-            color: #eee;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .container {
-            background: #16213e;
-            border-radius: 12px;
-            padding: 40px;
-            width: 380px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        }
-        h1 {
-            text-align: center;
-            color: #e94560;
-            margin-bottom: 8px;
-            font-size: 28px;
-        }
-        .subtitle {
-            text-align: center;
-            color: #888;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 6px;
-            color: #aaa;
-            font-size: 14px;
-        }
-        input[type="text"], input[type="password"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #333;
-            border-radius: 6px;
-            background: #0f3460;
-            color: #eee;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        input[type="text"]:focus, input[type="password"]:focus {
-            outline: none;
-            border-color: #e94560;
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 6px;
-            background: #e94560;
-            color: #fff;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s;
-            margin-top: 10px;
-        }
-        button:hover {
-            background: #d63851;
-        }
-        .tips {
-            margin-top: 20px;
-            padding: 12px;
-            background: #0f3460;
-            border-radius: 6px;
-            font-size: 13px;
-            color: #888;
-            line-height: 1.6;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>爆枪英雄私服 - 登录</title>
+<style>
+:root {
+  --bg-deep:   #080b14;
+  --bg-card:   #111827;
+  --bg-input:  #0f1420;
+  --border:    rgba(255,255,255,0.08);
+  --accent:    #e94560;
+  --accent-hover: #d63851;
+  --gold:      #f0c040;
+  --text:      #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --font-ui:   "Microsoft YaHei", "PingFang SC", -apple-system, sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box }
+body {
+  font-family: var(--font-ui);
+  background: var(--bg-deep);
+  color: var(--text);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* Ambient glow */
+.bg-glow {
+  position: fixed; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(233,69,96,0.08) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 80%, rgba(240,192,64,0.05) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 50%, rgba(59,130,246,0.04) 0%, transparent 60%);
+}
+
+.container {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 44px 40px 36px;
+  width: 400px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+  text-align: center;
+}
+.logo {
+  width: 64px; height: 64px;
+  margin: 0 auto 16px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(233,69,96,0.25), rgba(240,192,64,0.15));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+h1 { font-size: 26px; color: var(--text); margin-bottom: 4px; letter-spacing: 3px }
+.sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 28px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.form-group { margin-bottom: 18px; text-align: left }
+.form-group label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.form-group input {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 15px;
+  font-family: var(--font-ui);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-group input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(233,69,96,0.18);
+}
+.form-group input::placeholder { color: var(--text-muted) }
+
+.btn-play {
+  width: 100%;
+  padding: 13px;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 16px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 3px;
+  margin-top: 6px;
+}
+.btn-play:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 8px 28px rgba(233,69,96,0.35);
+  transform: translateY(-1px);
+}
+
+.tips {
+  margin-top: 22px;
+  padding: 14px 16px;
+  background: rgba(240,192,64,0.05);
+  border: 1px solid rgba(240,192,64,0.12);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.8;
+}
+.tips strong { color: var(--gold); font-weight: 600 }
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>爆枪英雄</h1>
-        <p class="subtitle">Private Server</p>
-        <form method="POST" action="/api/login">
-            <div class="form-group">
-                <label for="username">账号</label>
-                <input type="text" id="username" name="username" placeholder="请输入账号" required>
-            </div>
-            <div class="form-group">
-                <label for="password">密码</label>
-                <input type="password" id="password" name="password" placeholder="请输入密码" required>
-            </div>
-            <button type="submit">登 录 / 注 册</button>
-        </form>
-        <div class="tips">
-            首次登录将自动注册账号。<br>
-            初始金币: 5000
-        </div>
+<div class="bg-glow"></div>
+
+<div class="container">
+  <div class="logo">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#e94560" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+  </div>
+  <h1>爆枪英雄</h1>
+  <p class="sub">Private Server</p>
+
+  <form method="POST" action="/api/login">
+    <div class="form-group">
+      <label for="username">账号</label>
+      <input type="text" id="username" name="username" placeholder="请输入账号" required autofocus>
     </div>
+    <div class="form-group">
+      <label for="password">密码</label>
+      <input type="password" id="password" name="password" placeholder="请输入密码" required>
+    </div>
+    <button type="submit" class="btn-play">进入游戏</button>
+  </form>
+
+  <div class="tips">
+    首次登录将自动创建账号，赠送 <strong>5000 金币</strong>。<br>
+    已有账号请输入密码登录。
+  </div>
+</div>
 </body>
 </html>
