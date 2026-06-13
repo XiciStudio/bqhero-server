@@ -23,8 +23,8 @@ cdn_log.txt
 .idea/
 
 # CDN-downloaded game resources (auto-populated)
-游戏文件/swf/
-游戏文件/files/gun/swf/
+game_files/swf/
+game_files/files/gun/swf/
 
 # OS
 Thumbs.db

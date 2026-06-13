@@ -18,8 +18,8 @@ def register_blueprints(app: Flask):
     from app.routes.amf_utils import amf_bp
 
     # Thrift & mall stubs
-    from app.routes.thrift_routes import thrift_bp
-    from app.routes.mall_routes import mall_bp
+    from app.routes.thrift import thrift_bp
+    from app.routes.mall import mall_bp
 
     # Misc (must be last — contains /<path:path> catch-all)
     from app.routes.misc import misc_bp
