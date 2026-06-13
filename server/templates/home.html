@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>爆枪英雄私服 - 主页</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 40px;
+            width: 420px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        h1 {
+            color: #e94560;
+            margin-bottom: 6px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .info-card {
+            background: #0f3460;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .info-card .label {
+            color: #888;
+            font-size: 14px;
+        }
+        .info-card .value {
+            color: #ffd700;
+            font-size: 32px;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 14px 48px;
+            border-radius: 8px;
+            font-size: 18px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 8px;
+        }
+        .btn-play {
+            background: #e94560;
+            color: #fff;
+        }
+        .btn-play:hover {
+            background: #d63851;
+            transform: translateY(-2px);
+        }
+        .btn-logout {
+            background: transparent;
+            color: #888;
+            border: 1px solid #444;
+            font-size: 14px;
+            padding: 10px 32px;
+        }
+        .btn-logout:hover {
+            color: #eee;
+            border-color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>爆枪英雄</h1>
+        <p class="subtitle">Private Server</p>
+        <div class="info-card">
+            <div class="label">当前金币</div>
+            <div class="value">{{ Money }}</div>
+        </div>
+        <a href="/BQTJ" class="btn btn-play">进入游戏</a>
+        <br>
+        <a href="/Exit" class="btn btn-logout">退出登录</a>
+    </div>
+</body>
+</html>

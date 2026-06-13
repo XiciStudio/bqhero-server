@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+# CDN log
+cdn_log.txt
+
+# Environment
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+
+# CDN-downloaded game resources (auto-populated)
+游戏文件/swf/
+游戏文件/files/gun/swf/
+
+# OS
+Thumbs.db
+Desktop.ini

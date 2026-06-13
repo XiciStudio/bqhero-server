@@ -1,0 +1,952 @@
+from flask import Flask, render_template, send_file, send_from_directory
+from flask import redirect
+from flask import url_for
+from flask import request
+import model.check_login
+import model.regist_login
+import model.add_code
+import base64
+import zlib
+import miniamf.amf3
+import other.encrypt_decrypt
+import uuid
+from flask import Flask, make_response, redirect
+import ssl
+import json
+import urllib
+import time
+import datetime as to_codetime
+from urllib import parse
+from templates.config import conn
+from datetime import datetime
+
+
+class UserData():
+    # 一切函数需使用form_UserKey后方可使用
+    def __init__(self):
+        self.UserName = ''
+        self.Uid = ''
+
+    def form_UserKey(self, username, uid):
+        self.UserName = username
+        self.Uid = uid
+        self.data = self.UserData_Get_Data()
+        self.Money = self.UserData_Get_Money()[0]
+        self.TotalRecharge = self.UserData_Get_Money()[1]
+
+    def form_db_Get(self):
+        cursor = conn.cursor()
+        sql = "select * from user where username = '%s'" % (self.UserName)
+        conn.ping(reconnect=True)
+        cursor.execute(sql)
+        conn.commit()
+        rest = cursor.fetchall()
+        return rest[0]
+
+    def UserData_Get_Data(self):
+        cursor = conn.cursor()
+        sql = "select * from user where username = '%s'" % (self.UserName)
+        conn.ping(reconnect=True)
+        cursor.execute(sql)
+        conn.commit()
+        rest = cursor.fetchall()
+        return rest[0][3]
+
+    def UserData_Get_Money(self):
+        cursor = conn.cursor()
+        local = []
+        sql = "select * from user where username = '%s'" % (self.UserName)
+        conn.ping(reconnect=True)
+        cursor.execute(sql)
+        conn.commit()
+        rest = cursor.fetchall()
+        local.append(rest[0][4])
+        local.append(rest[0][5])
+        return local
+
+    def Add_Money(self, num: int):
+        cursor = conn.cursor()
+        sql = "update user set Money = '%s', TotalRecharge = '%s' where username = '%s'" % (
+        str(int(self.Money) + num), str(int(self.TotalRecharge) + num), self.UserName)
+        conn.ping(reconnect=True)
+        cursor.execute(sql)
+        conn.commit()
+        self.Money = str(int(self.Money) + num)
+        self.TotalRecharge = str(int(self.TotalRecharge) + num)
+        return True
+
+    def Mall_Money(self, num: int):
+        cursor = conn.cursor()
+        sql = "update user set Money = '%s' where username = '%s'" % (str(int(self.Money) - num), self.UserName)
+        conn.ping(reconnect=True)
+        cursor.execute(sql)
+        conn.commit()
+        self.Money = str(int(self.Money) - num)
+        return True
+
+    def in_union(self, union_id: int):
+        cursor = conn.cursor()
+        sql = "update user set inunion_id = '%s' where username = '%s'" % (str(union_id), self.UserName)
+        conn.ping(reconnect=True)
+        cursor.execute(sql)
+        conn.commit()
+        return True
+
+
+class exchange_code():
+    def __init__(self):
+        self.id = ''
+        self.num = 0
+        self.type = ''
+        self.used = 0
+
+    def form_code(self, code):
+        data = other.encrypt_decrypt.decrypt(code, "exchange_code")
+        local = data.split('&')
+        self.id = local[0]
+        self.num = local[1]
+        self.type = local[2]
+        self.used = self.Get_use()
+
+    def to_code(self):
+        code = other.encrypt_decrypt.encrypt(self.id + "&" + str(self.num) + "&" + self.type + "&" + str(self.used),
+                                             "exchange_code")
+        return code
+
+    def use(self):
+        cursor = conn.cursor()
+        sql = "update exchange_code set used = '%s' where id = '%s'" % (1, self.id)
+        conn.ping(reconnect=True)
+        cursor.execute(sql)
+        conn.commit()
+
+    def Get_use(self):
+        cursor = conn.cursor()
+        sql = "select * from exchange_code where id = '%s'" % (self.id)
+        conn.ping(reconnect=True)
+        cursor.execute(sql)
+        conn.commit()
+        rest = cursor.fetchall()
+        return rest[0][3]
+
+
+def Get_uid_Save(username):
+    cursor = conn.cursor()
+    sql = "select * from user where username = '%s'" % (username)
+    conn.ping(reconnect=True)
+    cursor.execute(sql)
+    conn.commit()
+    rest = cursor.fetchall()
+    return rest[0][2]
+
+
+app = Flask(__name__)
+app.static_folder = 'static'
+
+
+@app.route('/<path:path>')
+def serve_file(path):
+    if path.endswith('.swf') or path.endswith('.gif') or path.endswith('.html'):
+        root_dir = '/www/wwwroot/bqtjsf'
+        return send_from_directory(root_dir, path)
+    else:
+        return '哥们你走错地了QAQ'
+
+
+@app.route('/admin/test', methods=['POST', 'GET'])
+def test():
+    test_type = UserData()
+    test_type.form_UserKey(request.cookies.get("username"), request.cookies.get("uid"))
+    return test_type.to_UserKey()
+
+
+@app.route('/MD5', methods=['POST', 'GET'])
+def test0():
+    import hashlib
+    test1 = request.form['data']
+    md5 = hashlib.md5()
+    md5.update(test1.encode("utf-8"))
+    return md5.hexdigest()
+
+
+@app.route('/Exit', methods=['POST', 'GET'])
+def Exit():
+    response = make_response(render_template('index.html'))
+    response.delete_cookie('uid')
+    response.delete_cookie('uuid')
+    response.delete_cookie('username')
+    return response
+
+
+@app.route('/_4399/get_time', methods=['POST', 'GET'])
+def Get_time():
+    now = time.strftime('%Y-%m-%d %H:%M:%S')
+    json = {}
+    json['time'] = now
+    return json
+
+
+@app.route('/api/Get_Uid', methods=['POST', 'GET'])
+def Get_uid():
+    cursor = conn.cursor()
+    sql = "select * from user where username = '%s'" % (request.form['username'])
+    conn.ping(reconnect=True)
+    cursor.execute(sql)
+    conn.commit()
+    rest = cursor.fetchall()
+    return rest[0][2]
+
+
+@app.route('/User/GetUid', methods=['POST', 'GET'])
+def Get_uid_api():
+    return request.cookies.get("uid")
+
+
+@app.route('/User/GetUname', methods=['POST', 'GET'])
+def Get_Uname_api():
+    return request.cookies.get("username")
+
+
+@app.route('/_4399/GetMoney', methods=['POST', 'GET'])
+def Get_Money():
+    User = UserData()
+    User.form_UserKey(request.cookies.get("username"), request.cookies.get("uid"))
+    return other.encrypt_decrypt.encrypt_Money(User.Money, request.form['time'])
+
+
+@app.route('/_4399/GetTotalRecharge', methods=['POST', 'GET'])
+def Get_TotalRecharge():
+    User = UserData()
+    User.form_UserKey(request.cookies.get("username"), request.cookies.get("uid"))
+    return other.encrypt_decrypt.encrypt_Money(User.TotalRecharge, request.form['time'])
+
+
+@app.route('/_4399/submit', methods=['POST', 'GET'])
+def submit():
+    local = json.loads(request.form['data'])
+
+    js = {"id": 389, "rId": 1501, "gameid": "100027788", "index": 0, "uId": 51, "userName": "123456mjj", "score": 225,
+          "rank": 1, "area": "中国", "extra": ""}
+    # [{"score":1,"extra":"eNpja5auVspITUxRslJS0lFKLSzNLIAwc4FUmqGluQGQXZqXmJsK5D+d2oUVAZXklClZGeoolaVmQLQX5BeXQFjJ+Zl5SlamBgY6SikFxUCWsY5ScXZmTg5Euig/B2R0cElRZnZqEVAA5BqX1DQlK6CGVKB6JQMgAJmYk1gJVGCl9Lyj7dm8VU839D/rmPF08WqQ5ZlpQDOMDUxqAcrBSAo=","rId":1501}]
+    js["score"] = local[0]["score"]
+    js["index"] = int(request.form['idx'])
+    js["userName"] = request.cookies.get("username")
+    js["uId"] = request.cookies.get("uid")
+    js["id"] = request.cookies.get("uid")
+    js["extra"] = local[0]["extra"]
+    cursor = conn.cursor()
+    sql = "select * from top where rid = '%s'" % (str(local[0]["rId"]))
+    conn.ping(reconnect=True)
+    cursor.execute(sql)
+    conn.commit()
+    rest = cursor.fetchall()
+    topdata = json.loads(rest[0][1])
+    new_data_list = [item for item in topdata if not (
+                item.get("uId") == request.cookies.get("uid") and item.get("index") == int(request.form['idx']))]
+    topdata = new_data_list
+    topdata.append(js)
+    sorted_data = sorted(topdata, key=lambda x: x['score'], reverse=True)
+    for index, item in enumerate(sorted_data):
+        item['rank'] = index + 1
+        js['rank'] = index + 1
+    redata = json.dumps(sorted_data, ensure_ascii=False)
+    cursor = conn.cursor()
+    sql = "update top set data = '%s' where rid = '%s'" % (redata, str(local[0]["rId"]))
+    conn.ping(reconnect=True)
+    cursor.execute(sql)
+    conn.commit()
+    # {"1501":{"code":"10000","message":"1","data":{"rank":"58","rankLast":"58","score":"1","scoreLast":"1"}}}
+    rejson = {}
+    rejson[str(local[0]["rId"])] = {"code": "10000", "message": "1",
+                                    "data": {"rank": "58", "rankLast": "58", "score": "1", "scoreLast": "1"}}
+    rejson[str(local[0]["rId"])]["data"]["rank"] = str(js['rank'])
+    rejson[str(local[0]["rId"])]["data"]["rankLast"] = str(js['rank'])
+    rejson[str(local[0]["rId"])]["data"]["score"] = str(js["score"])
+    rejson[str(local[0]["rId"])]["data"]["scoreLast"] = str(js["score"])
+    return json.dumps(rejson, ensure_ascii=False)
+
+
+@app.route("/_4399/getRankingByPage", methods=['POST', 'GET'])
+def getRankingByPage():
+    num = int(request.form["limit"]) * int(request.form["page"])
+    cursor = conn.cursor()
+    sql = "select * from top where rid = '%s'" % (str(request.form["rankId"]))
+    l = []
+    d = {"code": "10000", "message": "1"}
+    conn.ping(reconnect=True)
+    cursor.execute(sql)
+    conn.commit()
+    rest = cursor.fetchall()
+    topdata = json.loads(rest[0][1])
+    if num > len(topdata):
+        num = len(topdata)
+        for i in range(num):
+            l.append(topdata[i])
+        d['data'] = l
+        return d
+    try:
+        for i in range(num - int(request.form["limit"]), num):
+            l.append(topdata[i])
+        d['data'] = l
+        return d
+    except:
+        d['data'] = l
+        return d
+
+
+@app.route("/_4399/getRank", methods=['POST', 'GET'])
+def Get_Rank():
+    a = {"code": "10000", "message": "1", "data": [
+        {"id": 1304, "rId": 1501, "gameid": "100027788", "index": 0, "uId": 115, "userName": "啊啊啊啊啊啊啊啊",
+         "score": 1, "rank": 58, "area": "中国",
+         "extra": "eNpja5auVspITUxRslJS0lFKLSzNLIAwc4FUmqGluQGQXZqXmJsK5D+d2oUVAZXklClZGeoolaVmQLQX5BeXQFjJ+Zl5SlamBgY6SikFxUCWsY5ScXZmTg5Euig/B2R0cElRZnZqEVAA5BqX1DQlK6CGVKB6JQMgAJmYk1gJVGCl9Lyj7dm8VU839D/rmPF08WqQ5ZlpQDOMDUxqAcrBSAo="}]}
+    cursor = conn.cursor()
+    sql = "select * from top where rid = '%s'" % (str(request.form["rankListId"]))
+    conn.ping(reconnect=True)
+    cursor.execute(sql)
+    conn.commit()
+    rest = cursor.fetchall()
+    topdata = json.loads(rest[0][1])
+    u = Get_uid_Save(request.form["uname"])
+    for i in topdata:
+        print(i)
+        if i["uId"] == u:
+            a['data'] = [i]
+            return a
+    return [{}]
+
+
+@app.route('/_4399/get_token_save', methods=['POST', 'GET'])
+def token():
+    return 'I_love_you'
+
+
+@app.route('/_4399/check_session', methods=['POST', 'GET'])
+def check_session():
+    return '1'
+
+
+@app.route('/_4399/GetOther', methods=['POST', 'GET'])
+def Get_Datajingji():
+    cursor = conn.cursor()
+    local = []
+    sql = "select * from user where uid = '%s'" % (request.form['uid'])
+    conn.ping(reconnect=True)
+    cursor.execute(sql)
+    conn.commit()
+    rest = cursor.fetchall()
+    data = rest[0][3]
+    savedata = rest[0][6 + int(request.form['index'])]
+    js = json.loads(data)
+    data = js[int(request.form['index'])]
+    if data['status'] == 0:
+        del data['datetime']
+        del data['status']
+        data['update_times'] = 5
+        data['create_time'] = "2024-07-16 11:25:00"
+        data['data'] = savedata
+        return data
+    else:
+        return "十年老兵禁止进入"
+
+
+@app.route('/', methods=['POST', 'GET'])
+def index():
+    cookie_1 = request.cookies.get("username")
+    print(cookie_1)
+    if cookie_1 != None:
+        User = UserData()
+        User.form_UserKey(request.cookies.get("username"), request.cookies.get("uid"))
+        return render_template('home.html', Money=User.Money)
+    else:
+        return render_template('index.html')
+
+
+@app.route('/BQTJ', methods=['POST', 'GET'])
+def play():
+    cookie_1 = request.cookies.get("username")
+    print(cookie_1)
+    if cookie_1 != None:
+        return render_template('bqv3241.html')
+    else:
+        return render_template('index.html')
+
+
+@app.route('/api/login', methods=['POST', 'GET'])
+def user_login():
+    if request.method == 'POST':  # 注册发送的请求为POST请求
+        username = request.form['username']
+        password = request.form['password']
+        if model.check_login.is_null(username, password):
+            login_massage = "温馨提示：账号和密码是必填"
+            return login_massage
+        elif model.check_login.is_existed(username, password):
+            User = UserData()
+            User.form_UserKey(username, Get_uid_Save(username))
+            response = make_response(render_template('home.html', Money=User.Money))
+            response.set_cookie('uid', Get_uid_Save(username), max_age=2592000)
+            response.set_cookie('uuid', str(uuid.uuid4()), max_age=2592000)
+            response.set_cookie('username', username, max_age=2592000)
+            return response
+        elif model.check_login.exist_user(username):
+            login_massage = "温馨提示：密码错误，请输入正确密码"
+            return login_massage
+        else:
+            model.regist_login.add_user(request.form['username'], request.form['password'], str(uuid.uuid4().int)[0:6])
+            User = UserData()
+            User.form_UserKey(username, Get_uid_Save(username))
+            User.Add_Money(5000)
+            response = make_response(render_template('home.html', Money=User.Money))
+            response.set_cookie('uid', Get_uid_Save(username), max_age=2592000)
+            response.set_cookie('uuid', str(uuid.uuid4()), max_age=2592000)
+            response.set_cookie('username', username, max_age=2592000)
+            return response
+    return '请使用POST请求', 404
+
+
+@app.route("/api/register", methods=['POST', 'GET'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        if model.check_login.is_null(username, password):
+            login_massage = "温馨提示：账号和密码是必填"
+            return login_massage
+        elif model.check_login.exist_user(username):
+            login_massage = "温馨提示：用户已存在，请直接登录"
+            return login_massage
+        else:
+            model.regist_login.add_user(request.form['username'], request.form['password'], str(uuid.uuid4().int)[0:6])
+            return other.encrypt_decrypt.encrypt(
+                request.form['username'] + "&" + request.form['password'] + "&" + Get_uid_Save(
+                    request.form['username']), "userkey")
+    return '请使用POST请求', 404
+
+
+@app.route("/admin/add_code", methods=["POST", "GET"])
+def add_exchange_code():
+    if request.form['adminkey'] == "sXk7m9TabUGvkaU77Ao9rNSLdOO1GOpt":
+        return model.add_code.add_code(request.form['type'], request.form['num'])
+    return "", 404
+
+
+@app.route("/api/exchange_code", methods=["POST", "GET"])
+def exchange():
+    user = UserData()
+    code_data = exchange_code()
+    code_data.form_code(request.form['code'])
+    if code_data.used == 1:
+        return 'The code is used', 404
+    elif code_data.type == "Money":
+        user.form_UserKey(request.cookies.get("username"), request.cookies.get("uid"))
+        code_data.use()
+        return str(user.Add_Money(int(code_data.num)))
+
+
+@app.route("/_4399/Save", methods=["POST", "GET"])
+def Save():
+    user = UserData()
+    response = make_response("1")
+    response.set_cookie('index', str(request.form['index']), max_age=2592000)
+    user.form_UserKey(request.cookies.get("username"), request.cookies.get("uid"))
+    json_data = json.loads(user.data)
+    print(type(json_data))
+    index = str(request.form['index'])
+    savedata = urllib.parse.unquote(request.form['data'])
+    try:
+        json_data[int(index)]['index'] = index
+        json_data[int(index)]['title'] = urllib.parse.unquote(request.form['title'])
+        json_data[int(index)]['datetime'] = time.strftime('%Y-%m-%d %H:%M:%S')
+        json_data[int(index)]['status'] = 0
+    except IndexError:
+        json_data.append({})
+        print(type(json_data))
+        json_data[len(json_data) - 1]['index'] = index
+        json_data[len(json_data) - 1]['title'] = urllib.parse.unquote(request.form['title'])
+        json_data[len(json_data) - 1]['datetime'] = time.strftime('%Y-%m-%d %H:%M:%S')
+        json_data[len(json_data) - 1]['status'] = 0
+    cursor = conn.cursor()
+    sql = "update user set data = '%s' where username = '%s'" % (
+    json.dumps(json_data, ensure_ascii=False), user.UserName)
+    sql_ = "update user set data_%s = '%s' where username = '%s'" % (str(index), savedata, user.UserName)
+    conn.ping(reconnect=True)
+    cursor.execute(sql)
+    cursor.execute(sql_)
+    conn.commit()
+    return response
+
+
+@app.route("/_4399/GetData", methods=["POST", "GET"])
+def GetData():
+    cursor = conn.cursor()
+    local = []
+    sql = "select * from user where username = '%s'" % (request.cookies.get("username"))
+    conn.ping(reconnect=True)
+    cursor.execute(sql)
+    conn.commit()
+    rest = cursor.fetchall()
+    data = rest[0][3]
+    savedata = rest[0][6 + int(request.form['index'])]
+    js = json.loads(data)
+    data = js[int(request.form['index'])]
+    if data['status'] == 0:
+        del data['datetime']
+        del data['status']
+        data['update_times'] = 5
+        data['create_time'] = "2024-07-16 11:45:14"
+        data['data'] = savedata
+        return data
+    else:
+        return "十年老兵禁止进入"
+
+
+@app.route("/_4399/GetList", methods=["POST", "GET"])
+def GetList():
+    cursor = conn.cursor()
+    local = []
+    sql = "select * from user where username = '%s'" % (request.cookies.get("username"))
+    conn.ping(reconnect=True)
+    cursor.execute(sql)
+    conn.commit()
+    rest = cursor.fetchall()
+    data = rest[0][3]
+    return data
+
+
+@app.route("/_4399/play", methods=["POST", "GET"])
+def P():
+    return "1"
+
+
+@app.route("/_4399/auth", methods=["POST", "GET"])
+def A():
+    return "1"
+
+
+@app.route("/_4399/VariableApi", methods=["POST", "GET"])
+def V():
+    return "1"
+
+
+@app.route("/api/4399/Datadecode", methods=["POST", "GET"])
+def api4399decode():
+    local = request.form['data']
+    local_1 = base64.b64decode(local)
+    local_2 = zlib.decompress(local_1)
+    arr = miniamf.amf3.ByteArray()
+    arr.append(local_2)
+    return arr.readObject()
+
+
+@app.route("/api/4399/Dataencode", methods=["POST", "GET"])
+def api4399encode():
+    local = request.form['data']
+    arr = miniamf.amf3.ByteArray()
+    arr.writeObject(local)
+    local_1 = zlib.compress(arr.encode())
+    return base64.b64encode(local_1).decode()
+
+
+@app.route("/api/4399/bqtj/decodeObject", methods=["POST", "GET"])
+def decodeObject():
+    local = request.form['data']
+    local_1 = base64.b64decode(local)
+    arr = miniamf.amf3.ByteArray()
+    arr.append(local_1)
+    return arr.readObject()
+
+
+@app.route("/_4399/FlashStoreApi", methods=["POST", "GET"])
+def mall():
+    # {"propId":"4460","count":1,"balance":9760,"tag":""}
+    jiaqian = int(request.form['propPrice']) * int(request.form['propCount'])
+    User = UserData()
+    User.form_UserKey(request.cookies.get("username"), request.cookies.get("uid"))
+    if User.Mall_Money(jiaqian):
+        a = {"propId": "4460", "count": 1, "balance": 9760, "tag": ""}
+        a["propId"] = request.form['propId']
+        a["count"] = request.form['propCount']
+        a["balance"] = User.Money
+        return a
+    return '1'
+
+
+@app.route("/api/4399/bqtj/encodeObject", methods=["POST", "GET"])
+def encodeObject():
+    local = request.form['data']
+    arr = miniamf.amf3.ByteArray()
+    ASObj = miniamf.ASObject(json.loads(local))
+    arr.writeObject(ASObj)
+    return base64.b64encode(arr.encode()).decode()
+
+
+@app.route("/_4399/get_token", methods=["POST", "GET"])
+def get_token():
+    return '114514'
+
+
+@app.route("/_4399/get_session", methods=["POST", "GET"])
+def get_session():
+    return '114514'
+
+
+@app.route("/_4399/init_sql", methods=["POST", "GET"])
+def Init():
+    cur = conn.cursor()
+    if request.form['adminkey'] == "sXk7m9TabUGvkaU77Ao9rNSLdOO1GOpt":
+        for i in range(800, 2500):
+            defaultData = '[]'
+            sql = "INSERT INTO top(rid, data) VALUES ('%s','%s')" % (str(i), '[]')
+            conn.ping(reconnect=True)
+            cur.execute(sql)
+            conn.commit()
+        return '1'
+
+
+@app.route("/_4399/getUnionList", methods=["POST", "GET"])
+def Get_unionList():
+    l = {"tag": "", "unionList": []}
+    cursor = conn.cursor()
+    table_name = "union_data"
+    query = f"SELECT info FROM {table_name}"
+    conn.ping(reconnect=True)
+    cursor.execute(query)
+    s = cursor.fetchall()
+    infos = [row[0] for row in s]
+    for i in infos:
+        l["unionList"].append(json.loads(i))
+    l["unionList"] = sorted(l["unionList"], key=lambda x: x['level'], reverse=True)
+    return json.dumps(l, ensure_ascii=False)
+
+
+@app.route("/_4399/getOwnUnion", methods=["POST", "GET"])
+def Get_meUnion():
+    redict = {"tag": "", "me": {}}
+    cursor = conn.cursor()
+    local = []
+    sql = "select * from user where username = '%s'" % (request.cookies.get("username"))
+    conn.ping(reconnect=True)
+    cursor.execute(sql)
+    rest = cursor.fetchall()
+    unionid = rest[0][14]
+    if unionid:
+        sql_ = "select * from union_data where id = '%s'" % (str(unionid))
+        cursor.execute(sql_)
+        rest = cursor.fetchall()
+        print(rest[0][1])
+        unioninfo = json.loads(rest[0][1])
+        unionmember = json.loads(rest[0][5])
+        redict["me"]["unionInfo"] = unioninfo
+        for i in unionmember:
+            if i["uId"] == request.cookies.get("uid"):
+                redict["me"]["member"] = i
+
+        return json.dumps(redict, ensure_ascii=False)
+    else:
+        return json.dumps({"tag": "", "me": {"unionInfo": None}}, ensure_ascii=False)
+
+
+@app.route("/_4399/unionCreate", methods=["POST", "GET"])
+def unionCreate():
+    Member_dict = {"id": 68, "gameId": "100027788", "unionId": 13, "uId": 115, "userName": "啊啊啊啊啊啊啊啊",
+                   "index": 0, "contribution": 0, "nickName": "爆枪小战士 lv.1", "extra": "", "extra2": "",
+                   "active_time": "2024-08-28 09:28:28", "roleId": -1, "roleName": "总司令"}
+
+    info_dict = {"id": 13, "unionId": 13, "title": "吊炸天", "userName": "啊啊啊啊啊啊啊啊", "level": 1, "count": 1,
+                 "extra": {"militaryRank": "", "money": 0, "lv": 0, "loginTime": "", "vip": "", "playerName": "",
+                           "conObj": {}, "dps": 0, "life": 0, "lt": 0, "mp": "", "bt": ""}, "experience": 0,
+                 "contribution": 0, "nickName": "爆枪小战士 lv.1", "uId": 115, "index": 0, "extra2": "",
+                 "dissolveDate": "", "transfer": "", "gameid": "100027788"}
+    user = UserData()
+    user.form_UserKey(request.cookies.get("username"), request.cookies.get("uid"))
+    user.Mall_Money(200)
+    Member_dict["id"] = request.cookies.get("uid")
+    Member_dict["active_time"] = time.strftime('%Y-%m-%d %H:%M:%S')
+    Member_dict["userName"] = request.cookies.get("username")
+    Member_dict["index"] = int(request.form["idx"])
+    Member_dict["uId"] = request.cookies.get("uid")
+    unionid = int(str(uuid.uuid4().int)[0:6])
+    Member_dict["unionId"] = unionid
+    user.in_union(unionid)
+    info_dict["title"] = request.form["title"]
+    info_dict["extra"] = ""
+    info_dict["id"] = unionid
+    info_dict["unionId"] = unionid
+    info_dict["userName"] = request.cookies.get("username")
+    info_dict["index"] = int(request.form["idx"])
+    info_dict["uId"] = request.cookies.get("uid")
+    local = []
+    local.append(Member_dict)
+    cursor = conn.cursor()
+    sql = "select * from user where username = '%s'" % (request.cookies.get("username"))
+    conn.ping(reconnect=True)
+    cursor.execute(sql)
+    rest = cursor.fetchall()
+    data = json.loads(rest[0][3])[int(request.form["idx"])]
+    Member_dict["nickName"] = data["title"]
+    info_dict["nickName"] = data["title"]
+    sql_1 = "INSERT INTO union_data(id, info, application, building, hegemony, member) VALUES ('%s','%s','%s','%s','%s','%s')" % (
+    str(unionid), json.dumps(info_dict, ensure_ascii=False, separators=(',', ':')).replace('\\', ''), "[]", "[]", "[]",
+    json.dumps(local, ensure_ascii=False, separators=(',', ':')).replace('\\', ''))
+    cursor.execute(sql_1)
+    conn.commit()
+    return "True"
+
+
+@app.route("/_4399/setMemberExtra", methods=["POST", "GET"])
+def setMemberExtra():
+    cursor = conn.cursor()
+    local = []
+    redict = {}
+    sql = "select * from user where username = '%s'" % (request.cookies.get("username"))
+    conn.ping(reconnect=True)
+    cursor.execute(sql)
+    rest = cursor.fetchall()
+    unionid = rest[0][14]
+    if unionid:
+        sql_ = "select * from union_data where id = '%s'" % (str(unionid))
+        cursor.execute(sql_)
+        rest = cursor.fetchall()
+        unionmember = json.loads(rest[0][5])
+        for i in unionmember:
+            if i["uId"] == request.cookies.get("uid"):
+                redict = i
+        redict["extra"] = request.form["extra"]
+        new_data_list = [item for item in unionmember if not (
+                    item.get("uId") == request.cookies.get("uid") and item.get("index") == int(request.form['idx']))]
+        new_data_list.append(redict)
+        sql_ = "update union_data set member = '%s' where id = '%s'" % (
+        json.dumps(new_data_list, ensure_ascii=False, separators=(',', ':')), str(unionid))
+        cursor.execute(sql_)
+        conn.commit()
+        return "True"
+    return "False"
+
+
+@app.route("/_4399/setUnionExtra", methods=["POST", "GET"])
+def setUnionExtra():
+    cursor = conn.cursor()
+    local = []
+    sql = "select * from user where username = '%s'" % (request.cookies.get("username"))
+    conn.ping(reconnect=True)
+    cursor.execute(sql)
+    rest = cursor.fetchall()
+    unionid = rest[0][14]
+    if unionid:
+        sql_ = "select * from union_data where id = '%s'" % (str(unionid))
+        cursor.execute(sql_)
+        rest = cursor.fetchall()
+        unioninfo = json.loads(rest[0][1])
+        print(unioninfo)
+        unioninfo["extra"] = request.form["extra"]
+        sql_ = "update union_data set info = '%s' where id = '%s'" % (
+        json.dumps(unioninfo, ensure_ascii=False, separators=(',', ':')), str(unionid))
+        cursor.execute(sql_)
+        conn.commit()
+        return "True"
+    return "False"
+
+
+@app.route("/_4399/getUnionMembers", methods=["POST", "GET"])
+def getUnionMembers():
+    d = {"tag": "", "memberList": None}
+    cursor = conn.cursor()
+    conn.ping(reconnect=True)
+    sql = "select * from union_data where id = '%s'" % (request.form["unionId"])
+    cursor.execute(sql)
+    conn.commit()
+    rest = cursor.fetchall()
+    unionmember = json.loads(rest[0][5])
+    d["memberList"] = unionmember
+    return json.dumps(d, ensure_ascii=False)
+
+
+@app.route("/_4399/applyUnion", methods=["POST", "GET"])
+def applyUnion():
+    Member_dict = {"id": 68, "gameId": "100027788", "unionId": 13, "uId": 115, "userName": "啊啊啊啊啊啊啊啊",
+                   "index": 0, "contribution": 0, "nickName": "爆枪小战士 lv.1", "extra": "", "extra2": "",
+                   "active_time": "2024-08-28 09:28:28", "roleId": 0, "roleName": ""}
+    Member_dict["id"] = request.cookies.get("uid")
+    Member_dict["unionId"] = int(request.form["unionId"])
+    Member_dict["active_time"] = time.strftime('%Y-%m-%d %H:%M:%S')
+    Member_dict["userName"] = request.cookies.get("username")
+    Member_dict["index"] = int(request.form["idx"])
+    Member_dict["uId"] = request.cookies.get("uid")
+    Member_dict["extra"] = request.form["extra"]
+    cursor = conn.cursor()
+    sql = "select * from user where username = '%s'" % (request.cookies.get("username"))
+    conn.ping(reconnect=True)
+    cursor.execute(sql)
+    rest = cursor.fetchall()
+    data = json.loads(rest[0][3])[int(request.form["idx"])]
+    Member_dict["nickName"] = data["title"]
+    sql_0 = "select * from union_data where id = '%s'" % (request.form["unionId"])
+    cursor.execute(sql_0)
+    rest = cursor.fetchall()
+    li = json.loads(rest[0][2])
+    li = [item for item in li if
+          not (item.get("uId") == request.cookies.get("uid") and item.get("index") == int(request.form['idx']))]
+    li.append(Member_dict)
+    sql_ = "update union_data set application = '%s' where id = '%s'" % (
+    json.dumps(li, ensure_ascii=False), request.form["unionId"])
+    cursor.execute(sql_)
+    conn.commit()
+    return "True"
+
+
+@app.route("/_4399/getApplyList", methods=["POST", "GET"])
+def getApplyList():
+    cursor = conn.cursor()
+    local = {"tag": "", "applyList": None}
+    sql = "select * from user where username = '%s'" % (request.cookies.get("username"))
+    conn.ping(reconnect=True)
+    cursor.execute(sql)
+    rest = cursor.fetchall()
+    unionid = rest[0][14]
+    if unionid:
+        sql_ = "select * from union_data where id = '%s'" % (str(unionid))
+        cursor.execute(sql_)
+        rest = cursor.fetchall()
+        local["applyList"] = json.loads(rest[0][2])
+        return json.dumps(local, ensure_ascii=False)
+
+
+@app.route("/_4399/auditMember", methods=["POST", "GET"])
+def audit():
+    cursor = conn.cursor()
+    local = {"tag": "", "applyList": None}
+    sql = "select * from user where username = '%s'" % (request.cookies.get("username"))
+    conn.ping(reconnect=True)
+    cursor.execute(sql)
+    rest = cursor.fetchall()
+    unionid = rest[0][14]
+    if unionid:
+        sql_ = "select * from union_data where id = '%s'" % (str(unionid))
+        cursor.execute(sql_)
+        rest = cursor.fetchall()
+        li = json.loads(rest[0][2])
+        for i in range(len(li)):
+            if li[i].get("uId") == request.form["userId"] and li[i].get("index") == int(request.form['userIndex']):
+                a = li[i]
+                li.pop(i)
+                break
+        sql_ = "update union_data set application = '%s' where id = '%s'" % (
+        json.dumps(li, ensure_ascii=False), str(unionid))
+        cursor.execute(sql_)
+
+        if int(request.form["auditResult"]):
+            sql_ = "update user set inunion_id = '%s' where uid = '%s'" % (str(unionid), request.form["userId"])
+            cursor.execute(sql_)
+            sql = "select * from union_data where id = '%s'" % (str(unionid))
+            conn.ping(reconnect=True)
+            cursor.execute(sql)
+            rest = cursor.fetchall()
+            me = json.loads(rest[0][5])
+            infou = json.loads(rest[0][1])
+            infou["count"] += 1
+            me.append(a)
+            sql_ = "update union_data set member = '%s' where id = '%s'" % (
+            json.dumps(me, ensure_ascii=False), str(unionid))
+            cursor.execute(sql_)
+            sql_ = "update union_data set info = '%s' where id = '%s'" % (
+            json.dumps(infou, ensure_ascii=False), str(unionid))
+            cursor.execute(sql_)
+        return "True"
+
+
+@app.route("/_4399/doTask", methods=["POST", "GET"])
+def doTask():
+    cursor = conn.cursor()
+    sql = "select * from user where username = '%s'" % (request.cookies.get("username"))
+    conn.ping(reconnect=True)
+    cursor.execute(sql)
+    rest = cursor.fetchall()
+    unionid = rest[0][14]
+    if unionid:
+        sql_ = "select * from union_data where id = '%s'" % (str(unionid))
+        cursor.execute(sql_)
+        rest = cursor.fetchall()
+        li = json.loads(rest[0][5])
+        for i in range(len(li)):
+            if li[i].get("uId") == request.cookies.get("uid") and li[i].get("index") == int(request.form['idx']):
+                li[i]["contribution"] += 100
+        info = json.loads(rest[0][1])
+        info["contribution"] += 100
+        info["experience"] += 100
+        level_list = [0, 10000, 20000, 30000, 40000, 50000, 60000, 180000, 300000, 420000, 540000, 660000, 780000,
+                      910000, 1050000, 1200000, 1360000, 1530000, 1710000, 1900000, 2100000, 2310000, 2530000, 2760000,
+                      3000000, 5250000, 5510000, 5780000, 6060000, 7350000, 7650000, 7960000, 8280000, 8610000, 9950000,
+                      10300000, 10660000, 11030000, 11410000, 12800000, 13200000, 13610000, 14030000, 14460000,
+                      14900000, 16350000, 16810000, 17280000, 17760000, 18250000, 18850000, 19550000, 20350000,
+                      21250000, 22250000, 23350000, 24550000, 25850000, 27250000, 28750000, 30350000, 32050000,
+                      33850000, 35750000, 37750000, 39850000, 42050000, 44350000, 46750000, 49250000, 51850000,
+                      54550000, 57350000, 60250000, 63250000, 66450000, 69850000, 73450000, 77250000, 81250000,
+                      85450000, 89850000, 94450000, 99250000, 104250000, 109450000, 114850000, 120450000, 126250000,
+                      132250000, 138450000, 144850000, 151450000, 158250000, 165250000, 172450000, 179850000, 187250000,
+                      194650000, 202050000, 209450000, 216850000, 224250000, 231650000, 239050000]
+
+        if info["contribution"] > level_list[info["level"]]:
+            info["contribution"] -= level_list[info["level"]]
+            info["level"] += 1
+
+        sql_ = "update union_data set member = '%s' where id = '%s'" % (
+        json.dumps(li, ensure_ascii=False), str(unionid))
+        cursor.execute(sql_)
+        sql_ = "update union_data set info = '%s' where id = '%s'" % (
+        json.dumps(info, ensure_ascii=False), str(unionid))
+        cursor.execute(sql_)
+        return "True"
+    return "False"
+
+
+@app.route("/_4399/doExchange", methods=["POST", "GET"])
+def doExchange():
+    cursor = conn.cursor()
+    user = UserData()
+    user.form_UserKey(request.cookies.get("username"), request.cookies.get("uid"))
+    user.Mall_Money(int(request.form['money']))
+    gongxian = int(int(request.form['money']) / 10 * 100)
+    sql = "select * from user where username = '%s'" % (request.cookies.get("username"))
+    conn.ping(reconnect=True)
+    cursor.execute(sql)
+    rest = cursor.fetchall()
+    unionid = rest[0][14]
+    if unionid:
+        sql_ = "select * from union_data where id = '%s'" % (str(unionid))
+        cursor.execute(sql_)
+        rest = cursor.fetchall()
+        li = json.loads(rest[0][5])
+        for i in range(len(li)):
+            if li[i].get("uId") == request.cookies.get("uid") and li[i].get("index") == int(request.form['idx']):
+                li[i]["contribution"] += gongxian
+        info = json.loads(rest[0][1])
+        info["contribution"] += gongxian
+        info["experience"] += gongxian
+        level_list = [0, 10000, 20000, 30000, 40000, 50000, 60000, 180000, 300000, 420000, 540000, 660000, 780000,
+                      910000, 1050000, 1200000, 1360000, 1530000, 1710000, 1900000, 2100000, 2310000, 2530000, 2760000,
+                      3000000, 5250000, 5510000, 5780000, 6060000, 7350000, 7650000, 7960000, 8280000, 8610000, 9950000,
+                      10300000, 10660000, 11030000, 11410000, 12800000, 13200000, 13610000, 14030000, 14460000,
+                      14900000, 16350000, 16810000, 17280000, 17760000, 18250000, 18850000, 19550000, 20350000,
+                      21250000, 22250000, 23350000, 24550000, 25850000, 27250000, 28750000, 30350000, 32050000,
+                      33850000, 35750000, 37750000, 39850000, 42050000, 44350000, 46750000, 49250000, 51850000,
+                      54550000, 57350000, 60250000, 63250000, 66450000, 69850000, 73450000, 77250000, 81250000,
+                      85450000, 89850000, 94450000, 99250000, 104250000, 109450000, 114850000, 120450000, 126250000,
+                      132250000, 138450000, 144850000, 151450000, 158250000, 165250000, 172450000, 179850000, 187250000,
+                      194650000, 202050000, 209450000, 216850000, 224250000, 231650000, 239050000]
+
+        if info["contribution"] > level_list[info["level"]]:
+            info["level"] += 1
+
+        sql_ = "update union_data set member = '%s' where id = '%s'" % (
+        json.dumps(li, ensure_ascii=False), str(unionid))
+        cursor.execute(sql_)
+        sql_ = "update union_data set info = '%s' where id = '%s'" % (
+        json.dumps(info, ensure_ascii=False), str(unionid))
+        cursor.execute(sql_)
+        return "True"
+    return "False"
+
+
+if __name__ == "__main__":
+    app.config['SERVER_NAME'] = 'sunblog.fun'
+    app.run("0.0.0.0", 8080)

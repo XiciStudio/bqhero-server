@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>爆枪英雄</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        body {
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        #game-container {
+            width: 950px;
+            height: 600px;
+        }
+        object, embed {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <object id="gameSwf" width="950" height="600" type="application/x-shockwave-flash"
+                data="/files/gun/v3241.swf">
+            <param name="movie" value="/files/gun/v3241.swf">
+            <param name="quality" value="high">
+            <param name="allowScriptAccess" value="always">
+            <param name="wmode" value="direct">
+        </object>
+    </div>
+
+    <script>
+    // ═══════════════════════════════════════════════════════════════
+    //  JavaScript Bridge for 4399 Flash Game Platform
+    //
+    //  The game SWF (ctrl_mo_v5) uses ExternalInterface to call JS
+    //  functions and expects JS to call back into the SWF to
+    //  trigger initialization and login flow.
+    // ═══════════════════════════════════════════════════════════════
+
+    function getCookie(name) {
+        var m = document.cookie.match(new RegExp('(^|; )' + name + '=([^;]*)'));
+        return m ? decodeURIComponent(m[2]) : null;
+    }
+
+    function getSwf() {
+        return document.getElementById('gameSwf');
+    }
+
+    // ---- Required JS functions (called by SWF via ExternalInterface) ----
+
+    // User info — return from cookies or defaults
+    function getUid() {
+        return getCookie('uid') || '100001';
+    }
+    function getUname() {
+        return getCookie('username') || 'admin';
+    }
+    function getDisplayNameText() {
+        return getCookie('username') || 'admin';
+    }
+
+    // Game info
+    function getGameInfo() {
+        return JSON.stringify({gameWidth: 950, gameHeight: 600});
+    }
+    function get4399id() {
+        return '100027788';
+    }
+
+    // User agent (Flash calls eval("window.navigator.userAgent"))
+    function getBrowser() {
+        return navigator.userAgent;
+    }
+
+    // Debug logging
+    function JsShow(msg) {
+        console.log('[SWF]', msg);
+    }
+
+    // Called by SWF when init complete
+    function ctrlInitCompleted() {
+        console.log('[Bridge] SWF init completed');
+    }
+
+    // Called by SWF on login/logout
+    function loginSuccess() {
+        console.log('[Bridge] Login success');
+    }
+    function logoutSuccess() {
+        console.log('[Bridge] Logout success');
+        document.cookie = 'uid=; max-age=0; path=/';
+        document.cookie = 'username=; max-age=0; path=/';
+        location.href = '/';
+    }
+
+    // Score/medal callbacks
+    function changeScore(score) { /* stub */ }
+    function submitScore(result) { /* stub */ }
+    function returnListData(type, data) { /* stub */ }
+
+    // The SWF calls ExternalInterface.call("eval", jsCodeString)
+    // We need a global eval-like function for this
+    function eval(code) {
+        // Flash calls eval("window.location.href") etc.
+        try {
+            return (new Function('return ' + code))();
+        } catch(e) {
+            return null;
+        }
+    }
+
+    // Global window.open for payment redirect
+    window.open = window.open || function(url, target) {
+        console.log('[Bridge] window.open blocked:', url);
+    };
+
+    // ---- UniLogin stub (mimics 4399 platform) ----
+    window.UniLogin = {
+        getUid: getUid,
+        getUname: getUname,
+        getDisplayNameText: getDisplayNameText,
+        showPopupLogin: function() {
+            // Instead of showing popup, we auto-trigger login
+            // The SWF registered "loginCallback" — call it directly
+            console.log('[Bridge] Auto-login triggered');
+            var swf = getSwf();
+            if (swf && swf.loginCallback) {
+                swf.loginCallback();
+            }
+        }
+    };
+
+    // ---- FPS Control (144fps default) ----
+    var currentFPS = 144;
+    function setGameFPS(fps) {
+        currentFPS = fps;
+        console.log('[Bridge] Setting FPS to', fps);
+        try {
+            var swf = getSwf();
+            if (swf) {
+                if (swf.setFrameRate) swf.setFrameRate(fps);
+                swf.frameRate = fps;
+            }
+        } catch(e) {}
+        try { localStorage.setItem('gameFPS', fps); } catch(e) {}
+    }
+    try {
+        var savedFPS = parseInt(localStorage.getItem('gameFPS'));
+        if (savedFPS >= 30 && savedFPS <= 360) currentFPS = savedFPS;
+    } catch(e) {}
+
+    // FPS hotkeys: F5=30, F6=60, F7=120, F8=144, F9=240
+    document.addEventListener('keydown', function(e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        var fpsMap = {116:30, 117:60, 118:120, 119:144, 120:240};
+        if (fpsMap[e.keyCode]) { setGameFPS(fpsMap[e.keyCode]); e.preventDefault(); }
+    });
+
+    // ---- Trigger SWF initialization ----
+    window.addEventListener('load', function() {
+        var modeObj = {
+            saveMode: true,
+            integralMode: true,
+            rankListMode: true,
+            unionMode: true,
+            shopMode: true,
+            medalMode: true,
+            secondaryMode: true,
+            gameListMode: false,
+            payMoney: false
+        };
+
+        function tryInit() {
+            var swf = getSwf();
+            if (swf && swf.setStyle) {
+                console.log('[Bridge] Initializing SWF...');
+                swf.setStyle('100027788', modeObj, '<root><gameWidth>950</gameWidth><gameHeight>600</gameHeight></root>');
+                // Give the SWF time to process setStyle, then show login
+                setTimeout(function() {
+                    if (swf.showLogPanel) {
+                        console.log('[Bridge] Triggering login flow...');
+                        swf.showLogPanel();
+                    }
+                    // Apply saved FPS after game loads
+                    setTimeout(function() { setGameFPS(currentFPS); }, 3000);
+                }, 500);
+            } else {
+                console.log('[Bridge] SWF not ready yet, retrying...');
+                setTimeout(tryInit, 500);
+            }
+        }
+
+        setTimeout(tryInit, 1500);
+    });
+    </script>
+</body>
+</html>
