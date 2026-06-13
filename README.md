@@ -6,6 +6,7 @@ Flash game private server compatible with the 4399 game client
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.1-lightgrey.svg)](https://flask.palletsprojects.com/)
+[![Release](https://img.shields.io/badge/release-v1.2.0-e94560.svg)](https://github.com/XiciStudio/bqhero-server/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 </div>
@@ -14,16 +15,22 @@ Flash game private server compatible with the 4399 game client
 
 ## Features
 
-- User authentication with password hashing
+- User authentication with password hashing (werkzeug PBKDF2)
+- Login/register with tab separation, client-side validation, CSRF protection
+- Rate limiting (5 attempts/60s per IP) and XSS sanitization
+- Profile page with user info, union, registration time
+- Change password with old-password verification
 - Auto-register with initial balance (5000 gold)
+- Online user count tracking (5-minute window)
 - Game save/load with 8 slots per user
 - In-game economy (money encryption via ECB DES)
 - Union (guild) system with 11 endpoints
 - Player ranking system
-- Exchange code redemption
-- Web admin panel (`/admin`) with Chinese UI — user/code/union management
+- Exchange code redemption with history
+- Web admin panel (`/admin`) — user/code/union management, password reset
 - CDN auto-download for missing game assets
 - AMF3 data serialization (Flash compatible)
+- Game updated to v3621 with loading progress bar
 
 ## Quick Start
 
@@ -54,7 +61,7 @@ Server starts at `http://localhost:8080`.
 │   │   │   ├── rank.py        # Ranking CRUD
 │   │   │   └── exchange_code.py
 │   │   ├── routes/
-│   │   │   ├── auth.py        # Login, register, logout
+│   │   │   ├── auth.py        # Login, register, logout, profile
 │   │   │   ├── save.py        # Game save/load
 │   │   │   ├── economy.py     # Money, recharge, shop
 │   │   │   ├── union.py       # Guild management
@@ -71,6 +78,10 @@ Server starts at `http://localhost:8080`.
 │   │       ├── helpers.py     # Auth helpers
 │   │       └── thrift_stub.py # Thrift client stub
 │   ├── templates/
+│   │   ├── index.html         # Login/register page
+│   │   ├── home.html          # User dashboard
+│   │   ├── profile.html       # User profile + change password
+│   │   ├── bqv3621.html       # Game page (SWF embed + JS bridge)
 │   │   └── admin/             # Admin panel pages
 │   └── modified_scripts/      # ActionScript patches (reference)
 ├── game_files/                # Game SWF assets
@@ -82,18 +93,20 @@ Server starts at `http://localhost:8080`.
 
 | Prefix | Purpose |
 |--------|---------|
-| `/api/login` `/api/register` `/Exit` | Authentication |
+| `/` `/register` `/Exit` | Web login/register/logout |
+| `/api/login` `/api/register` | API authentication |
+| `/profile` `/change-password` | User profile |
+| `/redeem` | Exchange code redemption |
 | `/_4399/Save` `/_4399/GetData` `/_4399/GetList` | Game saves |
 | `/_4399/GetMoney` `/_4399/FlashStoreApi` | Economy |
 | `/_4399/submit` `/_4399/getRankingByPage` | Rankings |
 | `/_4399/union*` (11 endpoints) | Union system |
-| `/api/exchange_code` `/admin/add_code` | Exchange codes |
 | `/admin` `/admin/users` `/admin/codes` `/admin/unions` | Admin panel |
 | `/api/4399/Datadecode` `/api/4399/Dataencode` | AMF3 utilities |
 
 ## Game Assets
 
-Missing SWF resource files are automatically downloaded from the official 4399 CDN on first request and cached in `game_files/`. The main game SWF (`v3241.swf`) and `local3241.swf` are included in this repository.
+Missing SWF resource files are automatically downloaded from the official 4399 CDN on first request and cached in `game_files/`. The main game SWF (`v3621.swf`) and `local3621.swf` are included in this repository.
 
 ## Configuration
 
